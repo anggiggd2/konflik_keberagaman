@@ -1,0 +1,2412 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Harmoni dalam Keberagaman - Media Pembelajaran Interaktif</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&family=Playfair+Display:ital,wght@0,600;1,600&display=swap');
+
+        /* RESET & LETTERBOX SETUP */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        
+        body, html { 
+            width: 100vw; height: 100vh; overflow: hidden; 
+            background-color: #0a1628; 
+            display: flex; align-items: center; justify-content: center;
+            touch-action: manipulation;
+        }
+
+        /* Container Pengunci Rasio 16:9 */
+        .app-container {
+            width: 100vw; height: 56.25vw; 
+            max-height: 100vh; max-width: 177.78vh; 
+            background-image: url('assets/bg.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            position: relative; color: #333; overflow: hidden;
+            container-type: size; 
+            box-shadow: 0 0 3cqh rgba(0,0,0,0.8); 
+        }
+
+        .app-container::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(206,17,38,0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255,206,0,0.06) 0%, transparent 50%),
+                linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.4) 100%);
+            z-index: 0; pointer-events: none;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            10%, 30%, 50%, 70%, 90% { transform: translate(-.4cqw, -.4cqh) rotate(-1deg); }
+            20%, 40%, 60%, 80% { transform: translate(.4cqw, .4cqh) rotate(1deg); }
+        }
+        .shake-effect { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+
+        .page {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            padding: 3cqh 5cqw; display: none; flex-direction: column;
+            justify-content: center; align-items: center;
+            animation: fadeIn 0.4s ease-in-out; z-index: 1;
+        }
+        .page.active { display: flex; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+
+        .content-center { text-align: center; color: #fff; width: 100%; max-width: 80cqw; margin-top: 0;}
+        
+        .title-anim { font-size: 5.5cqh; margin-bottom: 2cqh; line-height: 1.2; text-shadow: 0 .4cqh 1cqh rgba(0,0,0,0.8), 0 .1cqh .2cqh rgba(0,0,0,1);}
+        .title-anim span { color: #ffdd59; text-transform: uppercase; font-size: 7.5cqh; }
+        .page-title { text-align: center; color: #fff; font-size: 5cqh; margin-bottom: 2cqh; text-shadow: 0 .3cqh .8cqh rgba(0,0,0,0.8); font-weight: 800;}
+        
+        .input-name {
+            padding: 1.5cqh 2cqw; font-size: 2.5cqh; border-radius: 1.5cqh; border: none;
+            outline: none; margin-bottom: 2cqh; text-align: center; width: 32cqw; max-width: 80%;
+            background: rgba(255,255,255,0.9); font-weight: bold; box-shadow: inset 0 .3cqh .5cqh rgba(0,0,0,0.2), 0 .5cqh 1cqh rgba(0,0,0,0.4);
+        }
+        .input-name:focus { background: #fff; box-shadow: inset 0 .3cqh .5cqh rgba(0,0,0,0.1), 0 0 1cqh #ffdd59; }
+
+        .avatar-container { display: flex; justify-content: center; gap: 4cqw; margin-bottom: 3cqh; }
+        .avatar-btn { display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: 0.2s; }
+        .avatar-btn img {
+            width: 10cqh; height: 10cqh; border-radius: 50%; object-fit: cover; 
+            border: .4cqh solid rgba(255,255,255,0.5); box-shadow: 0 .5cqh 1cqh rgba(0,0,0,0.5); 
+            transition: 0.2s; background: rgba(255,255,255,0.8);
+        }
+        .avatar-btn p { margin-top: 1cqh; font-size: 2cqh; font-weight: 800; color: #fff; text-shadow: 0 .2cqh .4cqh rgba(0,0,0,0.8); transition: 0.2s;}
+        .avatar-btn:hover img { transform: scale(1.1); border-color: #ffdd59; }
+        .avatar-btn.selected img { transform: scale(1.15); border-color: #05c46b; box-shadow: 0 0 2cqh #05c46b; }
+        .avatar-btn.selected p { color: #0be881; text-shadow: 0 0 1cqh #000; transform: scale(1.1);}
+        .avatar-selection-img { width: 18cqh !important; height: 18cqh !important; border-width: .6cqh !important; }
+
+        .profile-hud {
+            position: absolute; top: 3cqh; right: 3cqw; display: none; align-items: center; gap: 1cqw;
+            background: rgba(255, 255, 255, 0.9); padding: .5cqh 1.5cqw .5cqh .5cqh; border-radius: 5cqh;
+            box-shadow: 0 .5cqh 1cqh rgba(0,0,0,0.4); border: .2cqh solid #fff; z-index: 100; backdrop-filter: blur(5px);
+        }
+        .profile-hud img { width: 5cqh; height: 5cqh; border-radius: 50%; object-fit: cover; border: .2cqh solid #ce1126; background: #ecf0f1;}
+        .profile-hud span { font-size: 2cqh; font-weight: 800; color: #ce1126; }
+
+        .hud-container { position: absolute; top: 3cqh; left: 3cqw; display: flex; gap: 1cqw; z-index: 100; }
+        .hud-box {
+            background: rgba(255, 221, 89, 0.9); color: #333; padding: 1cqh 2cqw;
+            font-size: 2.5cqh; font-weight: 800; border-radius: 5cqh; backdrop-filter: blur(5px);
+            box-shadow: 0 .5cqh 1cqh rgba(0,0,0,0.4); border: .2cqh solid #fff; display: none; transition: 0.2s;
+        }
+        #timer-hud { background: rgba(206, 17, 38, 0.9); color: white; }
+
+        #global-character-container {
+            position: absolute; bottom: 0; left: 2cqw; width: 32cqw; height: 90cqh; 
+            z-index: 2; display: none; align-items: flex-end; justify-content: center; pointer-events: none; 
+        }
+        #global-character-img {
+            width: 100%; height: 100%; object-fit: contain; object-position: bottom center;
+            filter: drop-shadow(0 1cqh 2cqh rgba(0,0,0,0.6));
+        }
+
+        .page-has-char { align-items: flex-end !important; padding-right: 4cqw !important; }
+        .page-has-char > .content-center,
+        .page-has-char > .page-title,
+        .page-has-char > .content-box,
+        .page-has-char > .nav-bar,
+        .page-has-char > .certificate-wrapper {
+            width: 72cqw !important; max-width: 72cqw !important;
+        }
+        .page-has-char .level-btn { max-width: 100% !important; }
+
+        .nav-bar { width: 100%; max-width: 90cqw; display: flex; justify-content: space-between; margin-top: 2cqh; gap: 2cqw; align-items: center;}
+        
+        .img-nav-btn {
+            height: 12cqh!important; width: auto; object-fit: contain; cursor: pointer;
+            border-radius: 1.5cqh; transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+        }
+        .img-nav-btn:hover { transform: translateY(-.5cqh) scale(1.05); filter: brightness(1.1); }
+        .img-nav-btn:active { transform: translateY(0) scale(0.95); }
+
+        .nav-btn-fallback {
+            height: 6cqh; padding: 0.8cqh 2cqw; border-radius: 1.2cqh; border: .3cqh solid rgba(255,255,255,0.4);
+            background: rgba(255,255,255,0.15); color: #fff; font-size: 1.8cqh; font-weight: 800;
+            cursor: pointer; transition: 0.2s; backdrop-filter: blur(8px); display: flex; align-items: center; gap: 1cqw;
+        }
+        .nav-btn-fallback:hover { background: rgba(255,255,255,0.25); transform: translateY(-.3cqh); }
+        .nav-btn-fallback:active { transform: scale(0.95); }
+        .nav-btn-fallback.primary { background: rgba(206,17,38,0.35); border-color: rgba(206,17,38,0.6); backdrop-filter: blur(10px); }
+        .nav-btn-fallback.primary:hover { background: rgba(206,17,38,0.55); }
+        .nav-btn-fallback.yellow { background: rgba(249,202,36,0.25); color: #ffdd59; border-color: rgba(249,202,36,0.5); backdrop-filter: blur(10px); }
+        .nav-btn-fallback.yellow:hover { background: rgba(249,202,36,0.38); }
+
+        #global-sound-btn {
+            position: absolute; bottom: 3cqh; left: 3cqw; z-index: 1000;
+            height: 8cqh; border-radius: 50%; cursor: pointer;
+            background: rgba(255,255,255,0.15); border: .3cqh solid rgba(255,255,255,0.3);
+            font-size: 4cqh; display: flex; align-items: center; justify-content: center;
+            width: 8cqh; transition: 0.2s; backdrop-filter: blur(5px);
+        }
+        #global-sound-btn:hover { background: rgba(255,255,255,0.25); transform: scale(1.1); }
+
+        .menu-grid { display: grid; grid-template-columns: repeat(3, 16cqw); gap: 4cqh 3cqw; justify-content: center; width: 100%; max-width: 90cqw; margin-top: 6cqh; }
+        .menu-item { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; background: transparent; border: none; cursor: pointer; width: 16cqw; transition: transform 0.3s ease; }
+        .menu-item:hover { transform: translateY(-1cqh) scale(1.05); }
+        .menu-item .menu-icon-box {
+            width: 16cqw; height: 16cqw; border-radius: 3cqh; margin-bottom: 1.5cqh;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 6cqh; box-shadow: 0 .5cqh 2cqh rgba(0,0,0,0.4);
+            transition: box-shadow 0.3s ease;
+        }
+        .menu-item:hover .menu-icon-box { box-shadow: 0 1cqh 3cqh rgba(0,0,0,0.6); }
+        .menu-item h3 { font-size: 2.2cqh; color: #fff; margin: 0; font-weight: 600; text-align: center; text-shadow: 0 0.3cqh 0.6cqh rgba(0,0,0,0.9); transition: color 0.3s ease;}
+        .menu-item:hover h3 { color: #ffdd59; }
+
+        .content-box {
+            background: rgba(255, 255, 255, 0.13); padding: 3.5cqh 4cqw; border-radius: 2cqh; 
+            width: 100%; height: 65cqh; display: flex; flex-direction: column; justify-content: flex-start;
+            box-shadow: 0 1cqh 3cqh rgba(0,0,0,0.3); overflow-y: auto; overflow-x: hidden;
+            backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); 
+            border: 1px solid rgba(255,255,255,0.25);
+        }
+        
+        .content-box h3 { color: #ffdd59; border-bottom: .3cqh solid rgba(255,221,89,0.5); display: inline-block; padding-bottom: .8cqh; margin-bottom: 1.5cqh; font-size: 2.8cqh;}
+        .content-box p, .content-box li { font-size: 2.1cqh; line-height: 1.6; margin-bottom: 1.5cqh; color: #ffffff; font-weight: 500;}
+        .content-box ul, .content-box ol { margin-left: 3cqw; margin-bottom: 2cqh;}
+
+        .text-analysis { border-left: .8cqw solid #ce1126; background: rgba(206,17,38,0.1); padding: 2cqh 2cqw; border-radius: 0 1cqh 1cqh 0; margin-bottom: 1.5cqh;}
+        .text-analysis p { font-size: 1.8cqh; line-height: 1.5; margin-bottom: 0; color: #fff;}
+
+        .structure-label { font-weight: 800; color: #ffdd59; margin-bottom: 1cqh; text-transform: uppercase; font-size: 1.6cqh;}
+
+        .content-box::-webkit-scrollbar { width: .8cqw; }
+        .content-box::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 1cqh; }
+        .content-box::-webkit-scrollbar-thumb { background: rgba(206,17,38,0.5); border-radius: 1cqh; }
+
+        /* Objectives Slider */
+        .obj-slider-wrapper { position: relative; width: 100%; flex-grow: 1; overflow: hidden; }
+        .obj-slide { position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            opacity: 0; transform: translateX(40px); transition: opacity 0.35s ease, transform 0.35s ease;
+            pointer-events: none; overflow-y: auto; padding-bottom: 1cqh; }
+        .obj-slide::-webkit-scrollbar { width: .8cqw; }
+        .obj-slide::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 1cqh; }
+        .obj-slide.active { opacity: 1; transform: translateX(0); pointer-events: auto; position: relative; }
+        .obj-slide.exit-left { opacity: 0; transform: translateX(-40px); pointer-events: none; position: absolute; }
+        .obj-nav-row { display: flex; justify-content: space-between; align-items: center; margin-top: 1.5cqh; flex-shrink: 0; }
+        .obj-arrow { background: rgba(206,17,38,0.2); border: .2cqh solid rgba(206,17,38,0.6); color: #ff6b7a;
+            padding: .8cqh 2cqw; border-radius: 1cqh; cursor: pointer; font-size: 2cqh; font-weight: 800; transition: 0.2s; }
+        .obj-arrow:hover { background: rgba(206,17,38,0.35); }
+        .obj-arrow:disabled { opacity: 0.3; cursor: default; }
+        .obj-dots { display: flex; gap: 1cqw; }
+        .obj-dot { width: 1.8cqh; height: 1.8cqh; border-radius: 50%; background: rgba(255,255,255,0.35);
+            cursor: pointer; transition: 0.2s; border: .2cqh solid rgba(255,255,255,0.5); }
+        .obj-dot.active { background: #ffdd59; border-color: #ffdd59; transform: scale(1.2); }
+        .obj-slide-label { font-size: 1.6cqh; color: rgba(255,255,255,0.6); font-weight: 600; }
+
+        .phase-badge { display: inline-block; background: linear-gradient(135deg, #ce1126, #a00d1e);
+            color: #fff; padding: .8cqh 2cqw; border-radius: 3cqh; font-size: 2cqh; font-weight: 800;
+            margin-bottom: 1.5cqh; box-shadow: 0 .4cqh 1cqh rgba(0,0,0,0.3); }
+        .phase-badge.gold { background: linear-gradient(135deg, #f9ca24, #d4a017); color: #1a1a2e; }
+        .cp-block { background: rgba(255,221,89,0.08); border-left: .6cqw solid #ffdd59;
+            padding: 1.5cqh 2cqw; border-radius: 0 1cqh 1cqh 0; margin-bottom: 1.5cqh; }
+        .cp-block .cp-label { font-size: 1.7cqh; color: #ffdd59; font-weight: 800; text-transform: uppercase;
+            letter-spacing: .1cqw; margin-bottom: .8cqh; }
+        .cp-block p { font-size: 1.9cqh; color: #fff; margin: 0; line-height: 1.55; font-weight: 500; }
+        .tp-item { display: flex; gap: 1.5cqw; align-items: flex-start; margin-bottom: 1.2cqh; }
+        .tp-num { background: #ce1126; color: #fff; font-weight: 800; font-size: 1.8cqh;
+            min-width: 3cqh; height: 3cqh; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .tp-text { font-size: 1.9cqh; color: #fff; line-height: 1.5; font-weight: 500; }
+        .tp-text em { color: #ffdd59; font-style: normal; font-weight: 700; }
+
+        .learn-tab-bar { display: flex; gap: .8cqw; justify-content: center; margin-bottom: 1.5cqh; flex-wrap: wrap; flex-shrink: 0; }
+        .learn-tab-btn { background: rgba(210,218,226,0.1); border: .2cqh solid rgba(255,255,255,0.2); padding: .8cqh 1.5cqw;
+            border-radius: 1cqh; font-weight: 700; cursor: pointer; transition: 0.2s; font-size: 1.7cqh; color: rgba(255,255,255,0.8); }
+        .learn-tab-btn:hover { background: rgba(255,255,255,0.15); }
+        .learn-tab-btn.active { background: #ce1126; color: #fff; border-color: #ce1126; box-shadow: 0 .4cqh 0 #8b0d1a; }
+        .learn-tab-content { display: none; overflow-y: auto; flex-grow: 1; padding-right: .5cqw; }
+        .learn-tab-content.active { display: block; }
+        .learn-tab-content::-webkit-scrollbar { width: .8cqw; }
+        .learn-tab-content::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.25); border-radius: 1cqh; }
+        
+        .concept-block { background: rgba(255,255,255,0.12); border-radius: 1cqh; padding: 1.5cqh 2cqw; margin-bottom: 1.2cqh; border: .15cqh solid rgba(255,255,255,0.25); }
+        .concept-block h5 { font-size: 2cqh; color: #ffdd59; margin-bottom: .6cqh; }
+        .concept-block p { font-size: 1.8cqh; color: rgba(255,255,255,0.88); line-height: 1.5; margin: 0; }
+        .concept-icon { font-size: 3cqh; margin-right: 1cqw; }
+        .concept-row { display: flex; align-items: flex-start; gap: 1.5cqw; }
+
+        .tip-card { display: flex; gap: 1.5cqw; background: rgba(255,221,89,0.08); border-radius: 1cqh;
+            padding: 1.2cqh 1.5cqw; margin-bottom: 1cqh; border-left: .5cqw solid #ffdd59; }
+        .tip-card .tip-num { font-size: 2.5cqh; font-weight: 800; color: #ffdd59; flex-shrink: 0; min-width: 3cqw; }
+        .tip-card p { font-size: 1.8cqh; color: #fff; margin: 0; line-height: 1.5; }
+
+        .quiz-grid { display: flex; flex-direction: column; gap: 2cqh; width: 100%; flex-grow: 1; justify-content: center; }
+        .quiz-card {
+            display: flex; align-items: center; gap: 2cqw;
+            background: rgba(255,255,255,0.15); border-radius: 1.5cqh;
+            padding: 1.5cqh 2cqw; cursor: pointer; transition: transform 0.2s, background 0.2s, box-shadow 0.2s;
+            border: .2cqh solid rgba(255,255,255,0.3); box-shadow: 0 .5cqh 1.5cqh rgba(0,0,0,0.15);
+        }
+        .quiz-card:hover { transform: translateY(-.5cqh) scale(1.02); background: rgba(255,255,255,0.25); }
+        .quiz-card:active { transform: translateY(.2cqh) scale(0.98); }
+        .quiz-card-icon { font-size: 7cqh; flex-shrink: 0; }
+        .quiz-card-info { flex: 1; text-align: left; }
+        .quiz-card-title { font-size: 2.3cqh; font-weight: 800; color: #fff; }
+        .quiz-card-desc { font-size: 1.7cqh; color: rgba(255,255,255,0.65); margin-top: .4cqh; }
+        .quiz-card-badge { font-size: 1.8cqh; font-weight: 800; padding: .8cqh 1.5cqw; border-radius: 3cqh; flex-shrink: 0; }
+        .qb-green { background: rgba(5,196,107,0.25); color: #0be881; border: .15cqh solid #05c46b; }
+        .qb-blue  { background: rgba(87,95,207,0.25); color: #a29bfe; border: .15cqh solid #575fcf; }
+        .qb-red   { background: rgba(206,17,38,0.25); color: #ff7675; border: .15cqh solid #ce1126; }
+        .quiz-points-note { text-align: center; font-size: 1.7cqh; color: rgba(255,255,255,0.7); font-weight: 600; margin-bottom: 1.5cqh; flex-shrink: 0; }
+
+        /* ===== LEVEL 1 NEW LAYOUT ===== */
+        .match-layout { display: flex; flex-direction: column; height: 100%; gap: 1.2cqh; }
+        .match-top-row { display: flex; gap: 1cqw; justify-content: center; flex-wrap: wrap; flex-shrink: 0; }
+        .match-term-card {
+            background: linear-gradient(135deg, #ce1126, #a00d1e);
+            color: #fff; padding: .9cqh 1.8cqw; border-radius: 1cqh;
+            font-size: 1.9cqh; font-weight: 800; cursor: pointer;
+            border: .25cqh solid rgba(255,255,255,0.3);
+            box-shadow: 0 .4cqh 1cqh rgba(0,0,0,0.4), 0 .3cqh 0 #8b0d1a;
+            transition: transform .15s, box-shadow .15s, background .15s;
+            text-align: center; user-select: none;
+        }
+        .match-term-card:active { transform: translateY(.3cqh); box-shadow: 0 0 0 #8b0d1a; }
+        .match-term-card.selected { background: linear-gradient(135deg, #f9ca24, #d4850a); color: #1a1a1a; border-color: #ffdd59; box-shadow: 0 0 1.5cqh rgba(249,202,36,0.6), 0 .3cqh 0 #b07700; transform: scale(1.05); }
+        .match-term-card.matched { background: linear-gradient(135deg, #05c46b, #028f4d); color: #fff; cursor: default; opacity: 0.65; box-shadow: none; transform: none; border-color: transparent; }
+
+        .match-divider { height: .15cqh; background: linear-gradient(to right, transparent, rgba(255,255,255,0.25), transparent); flex-shrink: 0; }
+
+        .match-defs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .8cqh 1cqw; flex-grow: 1; overflow-y: auto; }
+        .match-def-card {
+            background: rgba(255,255,255,0.12); color: #fff;
+            padding: 1cqh 1.2cqw; border-radius: 1cqh;
+            font-size: 1.45cqh; font-weight: 600; line-height: 1.4;
+            cursor: pointer; border: .2cqh solid rgba(255,255,255,0.25);
+            box-shadow: 0 .3cqh .8cqh rgba(0,0,0,0.25);
+            transition: transform .15s, background .15s, border-color .15s;
+            display: flex; align-items: center; user-select: none;
+        }
+        .match-def-card:hover { background: rgba(255,255,255,0.2); transform: translateY(-.2cqh); }
+        .match-def-card:active { transform: translateY(.2cqh); }
+        .match-def-card.selected { background: rgba(255,221,89,0.2); border-color: #ffdd59; color: #ffdd59; transform: scale(1.02); }
+        .match-def-card.matched { background: rgba(5,196,107,0.2); border-color: #05c46b; color: #0be881; cursor: default; }
+        .match-def-card.matched::before { content: '✅ '; font-size: 1.4cqh; margin-right: .4cqw; flex-shrink: 0; }
+
+        .match-container { display: flex; justify-content: space-between; height: 100%; gap: 2cqw; align-items: stretch; }
+        .match-column { display: flex; flex-direction: column; justify-content: space-around; width: 48%; gap: 1cqh; }
+        .match-item {
+            background: rgba(230, 230, 240, 0.92); padding: 1.2cqh 1cqw; border-radius: 1.2cqh; text-align: center; box-shadow: 0 .4cqh 0 #a4b0be;
+            font-weight: bold; cursor: pointer; transition: 0.1s; border: .2cqh solid transparent; font-size: 1.9cqh; color: #1a1a2e;
+        }
+        .match-item.ind-item { font-size: 1.45cqh; padding: .8cqh .9cqw; font-weight: 600; line-height: 1.35; }
+        .match-item:active { transform: translateY(.4cqh); box-shadow: 0 0 0 #a4b0be; }
+        .match-item.selected { border-color: #ce1126; background: #fff2cc; transform: scale(1.02); }
+        .match-item.matched { background: #05c46b; color: white; cursor: default; opacity: 0.7; box-shadow: none; transform: none;}
+
+        .passage-box { background: rgba(255,221,89,0.18); padding: 2cqh 2cqw; border-left: .8cqw solid #ffdd59; border-radius: 1cqh; font-size: 2cqh; margin-bottom: 2cqh; font-weight: 600; color: #fff;}
+
+        /* ===== LEVEL 3 REVAMPED LAYOUT ===== */
+        .lvl3-layout { display: flex; flex-direction: column; gap: 1cqh; flex-grow: 1; min-height: 0; overflow-y: auto; }
+        .lvl3-left { display: contents; }
+        .lvl3-right { display: contents; }
+
+        .lvl3-progress-row { display: flex; align-items: center; gap: 1cqw; flex-shrink: 0; }
+        .lvl3-prog-label { font-size: 1.55cqh; font-weight: 700; color: rgba(255,255,255,0.55); white-space: nowrap; }
+        .lvl3-prog-bar { flex: 1; height: .7cqh; background: rgba(255,255,255,0.12); border-radius: 1cqh; overflow: hidden; }
+        .lvl3-prog-fill { height: 100%; background: linear-gradient(to right, #ce1126, #ff7675); border-radius: 1cqh; transition: width .4s ease; }
+
+        .lvl3-qnum-badge {
+            display: inline-flex; align-items: center; gap: .6cqw;
+            background: linear-gradient(135deg, #ce1126, #a00d1e);
+            color: #fff; padding: .6cqh 1.5cqw; border-radius: 3cqh;
+            font-size: 1.55cqh; font-weight: 800; flex-shrink: 0;
+            box-shadow: 0 .3cqh .8cqh rgba(206,17,38,0.4);
+        }
+
+        .question-box {
+            background: rgba(255,255,255,0.1); padding: 1.8cqh 2.2cqw;
+            border-radius: 1.5cqh; font-size: 2cqh; font-weight: 700;
+            color: #fff; line-height: 1.55;
+            border: .2cqh solid rgba(255,255,255,0.2);
+            box-shadow: inset 0 0 2cqh rgba(0,0,0,0.1);
+        }
+
+        .options-container { display: flex; flex-direction: column; gap: .7cqh; }
+        .option-btn {
+            background: rgba(255,255,255,0.09); color: white;
+            padding: 1cqh 1.4cqw; border-radius: 1.1cqh;
+            font-size: 1.75cqh; transition: 0.18s; text-align: left;
+            box-shadow: 0 .3cqh 0 rgba(0,0,0,0.25);
+            cursor: pointer; border: .2cqh solid rgba(255,255,255,0.18);
+            display: flex; align-items: center; gap: 1cqw; line-height: 1.4;
+            width: 100%;
+        }
+        .option-btn:hover { background: rgba(206,17,38,0.4); }
+        .option-btn:active { transform: translateY(.4cqh); box-shadow: 0 0 0 rgba(0,0,0,0.3); }
+        
+        .option-btn .opt-label {
+            min-width: 2.8cqh; height: 2.8cqh; border-radius: 50%;
+            background: rgba(206,17,38,0.35); border: .15cqh solid rgba(206,17,38,0.6);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5cqh; font-weight: 800; color: #ff9a9a; flex-shrink: 0;
+            transition: 0.18s;
+        }
+        .option-btn:hover { background: rgba(255,255,255,0.17); border-color: rgba(255,255,255,0.4); transform: translateY(-.2cqh); box-shadow: 0 .5cqh 1.5cqh rgba(0,0,0,0.25); }
+        .option-btn:hover .opt-label { background: rgba(206,17,38,0.55); color: #fff; }
+        .option-btn:active { transform: translateY(.2cqh); box-shadow: 0 0 0 rgba(0,0,0,0.3); }
+
+        .lvl3-pembahasan-box {
+            background: rgba(255,221,89,0.1); border-left: .6cqw solid #ffdd59;
+            padding: 1.5cqh 2cqw; border-radius: 0 1cqh 1cqh 0;
+            display: none;
+        }
+        .lvl3-pembahasan-box .pb-label { color: #ffdd59; font-weight: 800; font-size: 1.7cqh; margin-bottom: .5cqh; }
+        .lvl3-pembahasan-box .pb-text { font-size: 1.65cqh; color: rgba(255,255,255,0.9); line-height: 1.55; }
+
+        .tf-container { display: flex; justify-content: center; gap: 3cqw; align-items: center; padding: 2cqh 0;}
+        .tf-btn { width: 45%; max-width: 25cqw; padding: 2cqh; font-size: 2.4cqh; font-weight: 800; border-radius: 1.5cqh; color: white; border:none; cursor:pointer; transition:0.1s;}
+        .btn-true { background: #05c46b; box-shadow: 0 .6cqh 0 #049551; } .btn-true:active { transform: translateY(.6cqh); box-shadow: 0 0 0 #049551; }
+        .btn-false { background: #ce1126; box-shadow: 0 .6cqh 0 #8b0d1a; } .btn-false:active { transform: translateY(.6cqh); box-shadow: 0 0 0 #8b0d1a; }
+
+        .score-screen { text-align: center; margin: auto; }
+        .score-text { font-size: 12cqh; color: #ffdd59; font-weight: 800; text-shadow: 0 .5cqh 1cqh rgba(0,0,0,0.4);}
+
+        .sim-container { display: flex; gap: 2cqw; height: 100%; min-height: 40cqh; }
+        .sim-controls { display: flex; flex-direction: column; gap: 2cqh; width: 35%;}
+        .sim-btn { padding: 2cqh; font-size: 1.9cqh; font-weight: bold; border-radius: 1cqh; background: rgba(255,255,255,0.18); color: #fff; box-shadow: 0 .4cqh 0 rgba(0,0,0,0.2); cursor:pointer; border: .2cqh solid rgba(255,255,255,0.35); transition:0.1s;}
+        .sim-btn:active { transform: translateY(.4cqh); box-shadow: 0 0 0 rgba(0,0,0,0.3); }
+        .sim-btn.active { background: #ce1126; color: white; border-color: #ce1126; box-shadow: 0 .4cqh 0 #8b0d1a; }
+        .sim-display { display: flex; flex-direction: column; gap: 2cqh; width: 65%;}
+        .sim-visual { flex-grow: 1; background: rgba(255,255,255,0.12); border-radius: 1.5cqh; position: relative; overflow: hidden; display: flex; justify-content: center; align-items: center; border: .3cqh solid rgba(255,255,255,0.25); font-size: 8cqh;}
+        .sim-text { background: rgba(255,255,255,0.12); padding: 2cqh; border-radius: 1.5cqh; border-left: .8cqw solid #ffdd59; }
+        .sim-text h4 { color: #ffdd59; margin-bottom: 1cqh; font-size: 2cqh; font-weight: 800;}
+        .sim-text p { font-size: 1.75cqh; font-weight: 500; color: #fff; line-height: 1.5;}
+
+        .certificate-wrapper {
+            position: relative;
+            background: transparent;
+            padding: 0;
+            margin: 0 auto;
+            width: fit-content;
+            perspective: 900px;
+        }
+        .certificate-wrapper:hover .certificate-inner {
+            transform: rotateX(4deg) rotateY(-3deg) scale(1.02);
+        }
+        .certificate-inner {
+            position: relative;
+            padding: 3.5cqh 4.5cqw;
+            text-align: center;
+            border-radius: 1.5cqh;
+            overflow: hidden;
+            transition: transform 0.5s ease, box-shadow 0.5s ease;
+            transform: rotateX(6deg) rotateY(-4deg);
+            transform-style: preserve-3d;
+
+            /* Gold foil layered background */
+            background:
+                linear-gradient(135deg,
+                    #fffef7 0%, #fff9e6 15%, #ffefc0 30%,
+                    #fff8d4 45%, #fffbee 60%, #ffeab5 75%,
+                    #fff5d6 90%, #fffcef 100%);
+
+            /* 3D depth shadow */
+            box-shadow:
+                8px 16px 40px rgba(0,0,0,0.55),
+                4px 8px 20px rgba(0,0,0,0.35),
+                0 2px 6px rgba(0,0,0,0.2),
+                inset 0 1px 1px rgba(255,255,255,0.9),
+                inset 0 -1px 2px rgba(180,140,50,0.3);
+        }
+
+        /* Outer ornate border */
+        .certificate-inner::before {
+            content: '';
+            position: absolute; top: .8cqh; left: .8cqw; right: .8cqw; bottom: .8cqh;
+            border: .25cqh solid rgba(180,130,30,0.6);
+            border-radius: 1cqh;
+            pointer-events: none;
+            box-shadow: inset 0 0 1.5cqh rgba(210,160,40,0.15);
+        }
+        /* Inner ornate border */
+        .certificate-inner::after {
+            content: '';
+            position: absolute; top: 1.4cqh; left: 1.4cqw; right: 1.4cqw; bottom: 1.4cqh;
+            border: .12cqh solid rgba(180,130,30,0.35);
+            border-radius: .6cqh;
+            pointer-events: none;
+        }
+
+        /* Corner ornaments */
+        .cert-corner {
+            position: absolute; width: 3.5cqh; height: 3.5cqh;
+            pointer-events: none; opacity: 0.55;
+            font-size: 2.5cqh; line-height: 1;
+            display: flex; align-items: center; justify-content: center;
+            color: #b8860b;
+        }
+        .cert-corner.tl { top: 2cqh; left: 2cqw; }
+        .cert-corner.tr { top: 2cqh; right: 2cqw; transform: scaleX(-1); }
+        .cert-corner.bl { bottom: 2cqh; left: 2cqw; transform: scaleY(-1); }
+        .cert-corner.br { bottom: 2cqh; right: 2cqw; transform: scale(-1); }
+
+        /* Shimmer overlay */
+        .cert-shimmer {
+            position: absolute; top: 0; left: -100%; width: 60%; height: 100%;
+            background: linear-gradient(105deg, transparent 35%, rgba(255,255,255,0.45) 50%, transparent 65%);
+            animation: shimmer 4s ease-in-out infinite;
+            pointer-events: none; z-index: 10;
+        }
+        @keyframes shimmer {
+            0%   { left: -100%; opacity: 0; }
+            10%  { opacity: 1; }
+            50%  { left: 130%; opacity: 1; }
+            60%  { opacity: 0; }
+            100% { left: 130%; opacity: 0; }
+        }
+
+        .cert-header {
+            font-family: 'Playfair Display', serif;
+            font-size: 3.8cqh; color: #8B6914;
+            font-weight: 800; letter-spacing: .15cqw;
+            text-shadow: 0 1px 2px rgba(180,130,20,0.4), 0 -1px 1px rgba(255,255,255,0.8);
+            position: relative;
+        }
+        .cert-seal {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 8cqh; height: 8cqh; border-radius: 50%;
+            background: radial-gradient(circle at 35% 35%, #ffe066, #d4a017 60%, #a07010);
+            box-shadow: 0 .4cqh 1.5cqh rgba(0,0,0,0.4), inset 0 .3cqh .5cqh rgba(255,255,255,0.4);
+            font-size: 4cqh; margin: 1.2cqh auto;
+            border: .3cqh solid rgba(180,130,20,0.5);
+            transform: translateZ(6px);
+        }
+        .cert-ribbon {
+            display: inline-block;
+            background: linear-gradient(135deg, #ce1126, #8b0d1a);
+            color: #fff;
+            font-size: 1.5cqh; font-weight: 800; letter-spacing: .12cqw;
+            padding: .5cqh 3cqw; text-transform: uppercase;
+            clip-path: polygon(8px 0%, calc(100% - 8px) 0%, 100% 50%, calc(100% - 8px) 100%, 8px 100%, 0% 50%);
+            margin: .3cqh 0 1cqh;
+            box-shadow: 0 .3cqh .8cqh rgba(0,0,0,0.35);
+            transform: translateZ(4px);
+        }
+        .cert-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 5cqh; color: #7a4f00;
+            margin: .8cqh 0 .5cqh; font-style: italic;
+            text-shadow: 0 1px 3px rgba(120,80,0,0.3), 0 -1px 1px rgba(255,255,255,0.7);
+            border-bottom: .2cqh solid rgba(180,130,20,0.45);
+            display: inline-block; padding: 0 3cqw .4cqh;
+            transform: translateZ(3px);
+        }
+        .cert-score-box {
+            display: inline-block;
+            padding: 1.5cqh 4cqw; border-radius: 1.2cqh;
+            background: linear-gradient(135deg, #1a0a00 0%, #3d1a00 50%, #1a0a00 100%);
+            border: .2cqh solid rgba(210,160,40,0.7);
+            margin-top: 1.2cqh;
+            box-shadow: 0 .5cqh 1.5cqh rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,200,50,0.2);
+            transform: translateZ(8px);
+        }
+        .cert-score-number {
+            font-size: 7.5cqh; font-weight: 800;
+            background: linear-gradient(135deg, #ffe066, #d4a017, #ffe066);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text; line-height: 1;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+        }
+        .cert-divider {
+            width: 60%; height: .15cqh; margin: .8cqh auto;
+            background: linear-gradient(to right, transparent, #b8860b, transparent);
+        }
+
+        .page:not(#page-welcome)::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 255, 255, 0.18);
+            backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);
+            z-index: 0; pointer-events: none;
+        }
+        .page:not(#page-welcome) > * { position: relative; z-index: 1; }
+
+        #page-guide::before, #page-objectives::before, #page-learn::before,
+        #page-exercise-menu::before, #page-level-1::before, #page-level-2::before,
+        #page-level-3::before, #page-level-4::before, #page-level-5::before,
+        #page-references::before, #page-certificate::before {
+            background: rgba(0, 0, 0, 0.55) !important;
+            backdrop-filter: blur(4px) !important; -webkit-backdrop-filter: blur(4px) !important;
+        }
+
+        #page-certificate.page-has-char { align-items: center !important; padding-right: 5cqw !important; }
+        #page-certificate .certificate-wrapper, #page-certificate .nav-bar { width: auto !important; max-width: 88cqw !important; }
+
+        .dropdown-q-block { background: rgba(255,255,255,0.12); border-radius: 1cqh; padding: 1.5cqh 2cqw; margin-bottom: 1.2cqh; border: .15cqh solid rgba(255,255,255,0.25); font-size: 2cqh; color: #fff; line-height: 1.8; }
+        .dropdown-q-block .inline-select { background: rgba(206,17,38,0.25); color: #fff; border: .2cqh solid rgba(206,17,38,0.6); border-radius: .6cqh; padding: .3cqh 1cqw; font-size: 1.9cqh; font-weight: 700; cursor: pointer; outline: none; max-width: 24cqw; }
+        .inline-select option { background: #1a1a2e; color: #fff; }
+        .inline-select.correct { background: rgba(5,196,107,0.4); border-color: #05c46b; }
+        .inline-select.wrong { background: rgba(206,17,38,0.5); border-color: #ff3f34; }
+        .dropdown-pembahasan { display:none; background:rgba(255,221,89,0.1); border-left:.6cqw solid #ffdd59; padding:1.5cqh 2cqw; border-radius:0 1cqh 1cqh 0; margin-top:1.5cqh; font-size:1.75cqh; color:#fff; }
+        .dropdown-pembahasan .pb-title { color:#ffdd59; font-weight:800; font-size:1.8cqh; margin-bottom:.6cqh; }
+
+        .kasus-pembahasan { margin-top: 1.5cqh; text-align: left; width: 100%; }
+        .kasus-pembahasan h4 { color: #ffdd59; font-size: 2cqh; font-weight: 800; margin-bottom: 1cqh; border-bottom: .2cqh solid rgba(255,221,89,0.4); padding-bottom: .6cqh; }
+        .kasus-pb-item { background: rgba(255,255,255,0.07); border-radius: 1cqh; padding: 1cqh 1.5cqw; margin-bottom: 1cqh; border-left: .5cqw solid #ffdd59; }
+        .kasus-pb-item .pb-q { font-size: 1.7cqh; color: #ffdd59; font-weight: 800; margin-bottom: .4cqh; }
+        .kasus-pb-item .pb-jawaban { font-size: 1.6cqh; color: rgba(255,255,255,0.9); line-height: 1.5; }
+        .kasus-pb-item .pb-status { font-size: 1.6cqh; font-weight: 800; margin-bottom: .3cqh; }
+
+        .kasus-pertanyaan { margin-bottom: 1.5cqh; }
+        .kasus-pertanyaan .kp-label { font-size: 1.8cqh; font-weight: 800; color: #ffdd59; margin-bottom: .7cqh; }
+        .kasus-textarea {
+            width: 100%; background: rgba(255,255,255,0.1); border: .2cqh solid rgba(255,255,255,0.35);
+            border-radius: .8cqh; padding: 1cqh 1.2cqw; font-size: 1.75cqh; color: #fff;
+            font-family: 'Poppins', sans-serif; resize: none; outline: none; line-height: 1.55;
+            min-height: 7cqh; transition: border-color .2s; caret-color: #ffdd59;
+        }
+        .kasus-textarea:focus { border-color: #ffdd59; background: rgba(255,221,89,0.08); }
+        .kasus-textarea::placeholder { color: rgba(255,255,255,0.35); font-style: italic; }
+        .kasus-nav { display: flex; justify-content: space-between; align-items: center; margin-top: 1cqh; flex-shrink: 0; }
+        .kasus-progress { font-size: 1.8cqh; color: rgba(255,255,255,0.65); font-weight: 600; }
+        .kasus-dots { display: flex; gap: .8cqw; align-items: center; }
+        .kasus-dot { width: 1.5cqh; height: 1.5cqh; border-radius: 50%; background: rgba(255,255,255,0.25); border: .15cqh solid rgba(255,255,255,0.4); transition: .2s; }
+        .kasus-dot.answered { background: #05c46b; border-color: #05c46b; }
+        .kasus-dot.current { background: #ffdd59; border-color: #ffdd59; transform: scale(1.2); }
+        .kasus-check-btn { margin-top: 1.2cqh; width: 100%; }
+
+        .btn-locked { opacity: 0.45 !important; cursor: not-allowed !important; filter: grayscale(0.5); }
+        .btn-locked::after { content: ' 🔒'; font-size: 0.9em; }
+
+        .panel-red { background: rgba(206,17,38,0.15); border: .2cqh solid rgba(206,17,38,0.4); border-radius: 1cqh; padding: 1.2cqh 1.5cqw; margin-bottom: 1cqh; }
+        .panel-gold { background: rgba(255,221,89,0.1); border: .2cqh solid rgba(255,221,89,0.4); border-radius: 1cqh; padding: 1.2cqh 1.5cqw; margin-bottom: 1cqh; }
+        .panel-blue { background: rgba(87,95,207,0.15); border: .2cqh solid rgba(87,95,207,0.4); border-radius: 1cqh; padding: 1.2cqh 1.5cqw; margin-bottom: 1cqh; }
+        .kv-tag { display: inline-block; font-size: 1.6cqh; font-weight: 800; padding: .4cqh 1cqw; border-radius: 2cqh; margin-bottom: .6cqh; }
+        .kv-tag.strategi { background: rgba(5,196,107,0.3); color: #0be881; border: .1cqh solid #05c46b; }
+        .kv-tag.peran { background: rgba(206,17,38,0.3); color: #ff7675; border: .1cqh solid #ce1126; }
+        /* ===== SORT / URUTKAN LANGKAH STYLES ===== */
+        .sort-slot {
+            display: flex; align-items: center; gap: 1cqw;
+            background: rgba(255,255,255,0.08); border: .2cqh dashed rgba(255,255,255,0.35);
+            border-radius: 1cqh; padding: .8cqh 1cqw; min-height: 4.5cqh;
+            cursor: pointer; transition: background .15s, border-color .15s;
+        }
+        .sort-slot:hover { background: rgba(255,221,89,0.1); border-color: #ffdd59; }
+        .slot-num {
+            background: rgba(206,17,38,0.6); color: #fff; font-weight: 800; font-size: 1.7cqh;
+            min-width: 3cqh; height: 3cqh; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        }
+        .slot-text { font-size: 1.7cqh; color: rgba(255,255,255,0.7); flex: 1; line-height: 1.4; }
+        .slot-remove {
+            background: rgba(206,17,38,0.4); color: #ff7675; border: none; border-radius: .5cqh;
+            font-size: 1.5cqh; padding: .3cqh .6cqw; cursor: pointer; flex-shrink: 0; transition: .15s;
+            display: inline-flex; align-items: center;
+        }
+        .slot-remove:hover { background: rgba(206,17,38,0.7); color: #fff; }
+        .sort-card {
+            background: rgba(255,255,255,0.15); border: .2cqh solid rgba(255,255,255,0.3);
+            border-radius: .8cqh; padding: .9cqh 1.2cqw; font-size: 1.65cqh; color: #fff;
+            cursor: pointer; transition: background .15s, transform .1s, border-color .15s;
+            line-height: 1.4;
+        }
+        .sort-card:hover { background: rgba(255,255,255,0.25); transform: translateY(-.2cqh); }
+        .sort-card.sort-card-selected { background: rgba(255,221,89,0.2); border-color: #ffdd59; color: #ffdd59; }
+        .sort-card.sort-card-used { background: rgba(5,196,107,0.1); border-color: rgba(5,196,107,0.3); opacity: 0.4; cursor: default; pointer-events: none; }
+
+        /* ===== CLASSIFY KONSEP STYLES ===== */
+        .classify-card {
+            background: rgba(255,255,255,0.13); border: .2cqh solid rgba(255,255,255,0.3);
+            border-radius: .8cqh; padding: .7cqh 1.2cqw; font-size: 1.6cqh; color: #fff;
+            cursor: pointer; transition: background .15s, transform .1s, border-color .15s;
+            line-height: 1.35;
+        }
+        .classify-card:hover { background: rgba(255,255,255,0.22); transform: translateY(-.2cqh); }
+        .classify-card.classify-selected { background: rgba(255,221,89,0.2); border-color: #ffdd59; color: #ffdd59; transform: scale(1.03); }
+        .classify-card.classified { pointer-events: none; }
+        .classify-cat { transition: box-shadow .15s, transform .1s; }
+        .classify-cat:hover { transform: translateY(-.2cqh); box-shadow: 0 .5cqh 1.5cqh rgba(0,0,0,0.3); }
+
+    </style>
+</head>
+<body>
+
+<audio id="audio-bg"      src="assets/audio/bg-music.mp3" loop preload="auto"></audio>
+<audio id="audio-click"   src="assets/audio/click.mp3"    preload="auto"></audio>
+<audio id="audio-correct" src="assets/audio/correct.mp3"  preload="auto"></audio>
+<audio id="audio-wrong"   src="assets/audio/wrong.mp3"    preload="auto"></audio>
+
+<div class="app-container" id="main-container">
+
+    <div class="hud-container">
+        <div id="timer-hud" class="hud-box" style="display:flex; align-items:center; gap:.8cqw; padding:.8cqh 1.5cqw;">
+            <span>⏱️</span>
+            <span id="timer-display">60s</span>
+            <button id="timer-pause-btn" onclick="toggleTimerPause()" title="Pause/Resume Timer"
+                style="background:rgba(255,255,255,0.25); border:none; border-radius:3cqh; cursor:pointer;
+                font-size:1.8cqh; padding:.3cqh .8cqw; color:#fff; font-weight:800; line-height:1; display:none; transition:0.2s;">
+                ⏸
+            </button>
+        </div>
+        <div id="global-score-hud" class="hud-box">🏆 Poin: <span id="display-points">0</span></div>
+    </div>
+
+    <div id="profile-container" class="profile-hud">
+        <img id="display-avatar" src="" alt="avatar">
+        <span id="display-username-hud">Siswa</span>
+    </div>
+
+    <div id="global-sound-btn" onclick="toggleGlobalSound()" title="Toggle Suara">🔊</div>
+
+    <div id="global-character-container">
+        <img id="global-character-img" src="" alt="character">
+    </div>
+
+    <!-- ================== PAGE WELCOME ================== -->
+    <section id="page-welcome" class="page active">
+        <canvas id="cover-lightning-canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;"></canvas>
+        <div id="cover-flash" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;background:rgba(180,220,255,0);transition:background 0.04s ease;"></div>
+        <div class="content-center">
+            <p style="font-size: 3cqh; margin-bottom: .5cqh; color: rgba(255,255,255,0.7); font-weight: 500;">Pendidikan Pancasila · Fase F · Kelas XI SMA</p>
+            <br>
+            <input type="text" id="username-input" class="input-name" placeholder="Ketik namamu di sini..." autocomplete="off">
+            <p id="welcome-text" style="font-size: 2.2cqh; margin-bottom: 2cqh; font-weight: 600; text-shadow: 0 .2cqh .4cqh rgba(0,0,0,0.8);">Silakan masukkan nama lengkap kamu dulu.</p>
+            <br>
+            <img src="assets/btn-mulai.png" class="img-nav-btn" alt="Mulai"
+                 style="height:10cqh;"
+                 onmouseenter="playHoverSound()" onclick="goToCharacterSelect()"
+                 onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-flex';">
+            <button class="nav-btn-fallback primary" style="display:none; margin: 1cqh auto 0; font-size: 2.8cqh; padding: 1.5cqh 4cqw; border-radius: 1.5cqh;" onmouseenter="playHoverSound()" onclick="goToCharacterSelect()">Mulai ▶</button>
+            <br>
+            <button id="btn-reset" onclick="resetSave()" style="margin-top: 1.2cqh; background: rgba(0,0,0,0.5); color: #fff; padding: 1cqh 2cqw; border-radius: 2cqh; cursor: pointer; display: none; font-size: 1.6cqh; border: 1px solid #fff;">🔄 Reset Data Tersimpan</button>
+        </div>
+    </section>
+
+    <!-- ================== PAGE CHARACTER ================== -->
+    <section id="page-character" class="page">
+        <div class="content-center">
+            <h2 class="page-title" style="font-size: 5cqh; margin-bottom: 4cqh;">Pilih Karaktermu</h2>
+            <div class="avatar-container" style="gap: 8cqw; margin-bottom: 5cqh;">
+                <div class="avatar-btn" id="btn-boy" onmouseenter="playHoverSound()" onclick="selectAvatar('boy')">
+                    <img src="assets/boy.png" alt="Laki-laki" class="avatar-selection-img"
+                         onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><circle cx=\'50\' cy=\'50\' r=\'50\' fill=\'%233498db\'/><text x=\'50\' y=\'65\' font-size=\'50\' text-anchor=\'middle\' fill=\'white\'>👦</text></svg>'">
+                    <p style="font-size: 2.5cqh; margin-top: 1.5cqh;">Boy</p>
+                </div>
+                <div class="avatar-btn" id="btn-girl" onmouseenter="playHoverSound()" onclick="selectAvatar('girl')">
+                    <img src="assets/girl.png" alt="Perempuan" class="avatar-selection-img"
+                         onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><circle cx=\'50\' cy=\'50\' r=\'50\' fill=\'%23e74c3c\'/><text x=\'50\' y=\'65\' font-size=\'50\' text-anchor=\'middle\' fill=\'white\'>👧</text></svg>'">
+                    <p style="font-size: 2.5cqh; margin-top: 1.5cqh;">Girl</p>
+                </div>
+            </div>
+            <img src="assets/btn-masuk.png" class="img-nav-btn" alt="Masuk" style="height:10cqh;"
+                 onmouseenter="playHoverSound()" onclick="loginUser()"
+                 onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-flex';">
+            <button class="nav-btn-fallback primary" style="display:none; margin: 1cqh auto 0; font-size: 2.8cqh; padding: 1.5cqh 4cqw; border-radius: 1.5cqh;" onmouseenter="playHoverSound()" onclick="loginUser()">Masuk ▶</button>
+        </div>
+    </section>
+
+    <!-- ================== PAGE HOME ================== -->
+    <section id="page-home" class="page page-has-char">
+        <div class="content-center">
+            <h1 class="title-anim">Halo,<br><span id="display-username">Siswa</span>!</h1>
+            <p style="font-size: 2.8cqh; margin-bottom: 4cqh; font-weight: 600; color: rgba(255,255,255,0.85);">Siap membangun harmoni dalam keberagaman bangsa?</p>
+            <img src="assets/btn-kemenu.png" class="img-nav-btn" alt="Ke Menu Utama" style="height:10cqh;"
+                 onmouseenter="playHoverSound()" onclick="playClickSound(); goToPage('page-menu')"
+                 onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-flex';">
+            <button class="nav-btn-fallback primary" style="display:none;" onmouseenter="playHoverSound()" onclick="playClickSound(); goToPage('page-menu')">Ke Menu Utama ▶</button>
+        </div>
+    </section>
+
+    <!-- ================== PAGE MENU ================== -->
+    <section id="page-menu" class="page">
+        <div class="menu-grid">
+            <div class="menu-item" onmouseenter="playHoverSound()" onclick="playClickSound(); goToPage('page-guide')">
+                <div class="menu-icon-box" style="background: linear-gradient(135deg,#a29bfe,#6c5ce7);">
+                    <img src="assets/menu-panduan.png" alt="Panduan" style="width:70%;height:70%;object-fit:contain;" onerror="this.style.display='none';this.nextElementSibling.style.display='block';">
+                    <span style="display:none;font-size:6cqh;">ℹ️</span>
+                </div>
+            </div>
+            <div class="menu-item" onmouseenter="playHoverSound()" onclick="playClickSound(); goToPage('page-objectives')">
+                <div class="menu-icon-box" style="background: linear-gradient(135deg,#6c5ce7,#a29bfe);">
+                    <img src="assets/menu-tujuan.png" alt="Tujuan Belajar" style="width:70%;height:70%;object-fit:contain;" onerror="this.style.display='none';this.nextElementSibling.style.display='block';">
+                    <span style="display:none;font-size:6cqh;">🎯</span>
+                </div>
+            </div>
+            <div class="menu-item" onmouseenter="playHoverSound()" onclick="playClickSound(); goToPage('page-learn')">
+                <div class="menu-icon-box" style="background: linear-gradient(135deg,#ce1126,#e84118);">
+                    <img src="assets/menu-materi.png" alt="Materi" style="width:70%;height:70%;object-fit:contain;" onerror="this.style.display='none';this.nextElementSibling.style.display='block';">
+                    <span style="display:none;font-size:6cqh;">📚</span>
+                </div>
+            </div>
+            <div class="menu-item" onmouseenter="playHoverSound()" onclick="playClickSound(); goToPage('page-exercise-menu')">
+                <div class="menu-icon-box" style="background: linear-gradient(135deg,#0be881,#05c46b);">
+                    <img src="assets/menu-latihan.png" alt="Latihan" style="width:70%;height:70%;object-fit:contain;" onerror="this.style.display='none';this.nextElementSibling.style.display='block';">
+                    <span style="display:none;font-size:6cqh;">✏️</span>
+                </div>
+            </div>
+            <div class="menu-item" onmouseenter="playHoverSound()" onclick="playClickSound(); goToPage('page-references')">
+                <div class="menu-icon-box" style="background: linear-gradient(135deg,#fd79a8,#e84393);">
+                    <img src="assets/menu-referensi.png" alt="Sumber Referensi" style="width:70%;height:70%;object-fit:contain;" onerror="this.style.display='none';this.nextElementSibling.style.display='block';">
+                    <span style="display:none;font-size:6cqh;">📖</span>
+                </div>
+            </div>
+            <div class="menu-item" onmouseenter="playHoverSound()" onclick="playClickSound(); generateCertificate()">
+                <div class="menu-icon-box" style="background: linear-gradient(135deg,#fdcb6e,#e17055);">
+                    <img src="assets/menu-sertifikat.png" alt="Sertifikat" style="width:70%;height:70%;object-fit:contain;" onerror="this.style.display='none';this.nextElementSibling.style.display='block';">
+                    <span style="display:none;font-size:6cqh;">🏅</span>
+                </div>
+            </div>
+        </div>
+        <div class="nav-bar" style="justify-content: center; margin-top: 3cqh;">
+            <button class="nav-btn-fallback" onmouseenter="playHoverSound()" onclick="playClickSound(); goToPage('page-home')">🏠 Beranda</button>
+        </div>
+    </section>
+
+    <!-- ================== PAGE GUIDE ================== -->
+    <section id="page-guide" class="page page-has-char">
+        <h2 class="page-title">Panduan Penggunaan</h2>
+        <div class="content-box">
+            <h3>Langkah-Langkah Menggunakan MPI Ini</h3>
+            <p>Ikuti langkah-langkah berikut secara <b>berurutan</b> agar proses belajarmu berjalan optimal.</p>
+            <div style="display:flex; flex-direction:column; gap:1.2cqh; margin-top:.5cqh;">
+                <div style="display:flex; gap:1.5cqw; align-items:flex-start; background:rgba(108,92,231,0.15); border-left:.6cqw solid #a29bfe; border-radius:0 1cqh 1cqh 0; padding:1.2cqh 1.5cqw;">
+                    <div style="min-width:4cqh; height:4cqh; border-radius:50%; background:linear-gradient(135deg,#6c5ce7,#a29bfe); display:flex; align-items:center; justify-content:center; font-size:2.2cqh; font-weight:800; color:#fff; flex-shrink:0;">1</div>
+                    <div><p style="color:#a29bfe; font-weight:800; font-size:2cqh; margin-bottom:.4cqh;">🎯 Baca Tujuan Pembelajaran</p><p style="font-size:1.85cqh; margin:0; line-height:1.55;">Buka menu <b>Tujuan Belajar</b>. Pahami seluruh tujuan pembelajaran sebelum memulai agar kamu tahu apa yang harus dikuasai.</p></div>
+                </div>
+                <div style="display:flex; gap:1.5cqw; align-items:flex-start; background:rgba(206,17,38,0.12); border-left:.6cqw solid #ce1126; border-radius:0 1cqh 1cqh 0; padding:1.2cqh 1.5cqw;">
+                    <div style="min-width:4cqh; height:4cqh; border-radius:50%; background:linear-gradient(135deg,#ce1126,#e84118); display:flex; align-items:center; justify-content:center; font-size:2.2cqh; font-weight:800; color:#fff; flex-shrink:0;">2</div>
+                    <div><p style="color:#ff6b7a; font-weight:800; font-size:2cqh; margin-bottom:.4cqh;">📚 Pelajari Seluruh Materi</p>
+                        <p style="font-size:1.85cqh; margin:0 0 .6cqh 0; line-height:1.55;">Buka menu <b>Materi</b>. Pelajari keenam tab secara urut:</p>
+                        <div style="display:flex; flex-direction:column; gap:.4cqh;">
+                            <div style="background:rgba(255,255,255,0.07); border-radius:.7cqh; padding:.6cqh 1cqw; font-size:1.72cqh; color:rgba(255,255,255,0.9);">🕊️ <b>Tab 1 — Prinsip Pancasila:</b> Landasan setiap sila dalam penyelesaian konflik</div>
+                            <div style="background:rgba(255,255,255,0.07); border-radius:.7cqh; padding:.6cqh 1cqw; font-size:1.72cqh; color:rgba(255,255,255,0.9);">⚖️ <b>Tab 2 — Metode Penyelesaian:</b> Negosiasi, mediasi, arbitrase, musyawarah mufakat</div>
+                            <div style="background:rgba(255,255,255,0.07); border-radius:.7cqh; padding:.6cqh 1cqw; font-size:1.72cqh; color:rgba(255,255,255,0.9);">👥 <b>Tab 3 — Peran Warga Negara:</b> Peran individu, masyarakat, dan negara</div>
+                            <div style="background:rgba(255,255,255,0.07); border-radius:.7cqh; padding:.6cqh 1cqw; font-size:1.72cqh; color:rgba(255,255,255,0.9);">💡 <b>Tab 4 — Gagasan Solutif:</b> Ide-ide kreatif mewujudkan harmoni keberagaman</div>
+                            <div style="background:rgba(255,255,255,0.07); border-radius:.7cqh; padding:.6cqh 1cqw; font-size:1.72cqh; color:rgba(255,255,255,0.9);">📰 <b>Tab 5 — Studi Kasus:</b> Contoh nyata konflik dan cara penyelesaiannya</div>
+                            <div style="background:rgba(255,255,255,0.07); border-radius:.7cqh; padding:.6cqh 1cqw; font-size:1.72cqh; color:rgba(255,255,255,0.9);">🌟 <b>Tab 6 — Nilai Kebangsaan:</b> Wawasan nusantara, literasi budaya, dan dialog antarbudaya</div>
+
+                        </div>
+                    </div>
+                </div>
+                <div style="display:flex; gap:1.5cqw; align-items:flex-start; background:rgba(11,232,129,0.1); border-left:.6cqw solid #05c46b; border-radius:0 1cqh 1cqh 0; padding:1.2cqh 1.5cqw;">
+                    <div style="min-width:4cqh; height:4cqh; border-radius:50%; background:linear-gradient(135deg,#0be881,#05c46b); display:flex; align-items:center; justify-content:center; font-size:2.2cqh; font-weight:800; color:#1a1a2e; flex-shrink:0;">3</div>
+                    <div><p style="color:#0be881; font-weight:800; font-size:2cqh; margin-bottom:.4cqh;">✏️ Kerjakan Asesmen (5 Level)</p>
+                        <div style="display:flex; flex-direction:column; gap:.5cqh; margin-top:.4cqh;">
+                            <div style="background:rgba(255,255,255,0.08); border-radius:.8cqh; padding:.7cqh 1.2cqw; font-size:1.75cqh; color:rgba(255,255,255,0.9);">🌱 <b>Level 1 — Menjodohkan Istilah:</b> Cocokkan istilah metode konflik dengan definisinya <span style="color:#ffdd59;">(maks. 6 poin)</span></div>
+                            <div style="background:rgba(255,255,255,0.08); border-radius:.8cqh; padding:.7cqh 1.2cqw; font-size:1.75cqh; color:rgba(255,255,255,0.9);">📋 <b>Level 2 — Isi dengan Drop-Down:</b> Lengkapi kalimat rumpang dengan kata yang tepat <span style="color:#ffdd59;">(maks. 10 poin)</span></div>
+                            <div style="background:rgba(255,255,255,0.08); border-radius:.8cqh; padding:.7cqh 1.2cqw; font-size:1.75cqh; color:rgba(255,255,255,0.9);">🃏 <b>Level 3 — Klasifikasi Konsep:</b> Kelompokkan kartu ke kategori yang tepat <span style="color:#ffdd59;">(maks. 16 poin)</span></div>
+                            <div style="background:rgba(255,255,255,0.08); border-radius:.8cqh; padding:.7cqh 1.2cqw; font-size:1.75cqh; color:rgba(255,255,255,0.9);">🏆 <b>Level 4 — Pilihan Ganda (5 Opsi):</b> Uji pemahaman tentang strategi dan peran warga <span style="color:#ffdd59;">(maks. 20 poin)</span></div>
+                            <div style="background:rgba(255,255,255,0.08); border-radius:.8cqh; padding:.7cqh 1.2cqw; font-size:1.75cqh; color:rgba(255,255,255,0.9);">🔢 <b>Level 5 — Urutkan Langkah:</b> Susun langkah-langkah penyelesaian konflik secara berurutan <span style="color:#ffdd59;">(maks. 48 poin)</span></div>
+                            <div style="background:rgba(255,221,89,0.1); border:.15cqh solid rgba(255,221,89,0.4); border-radius:.8cqh; padding:.7cqh 1.2cqw; font-size:1.75cqh; color:rgba(255,255,255,0.9);">🏆 <b style="color:#ffdd59;">Total Poin Maksimal: 100 Poin</b></div>
+                        </div>
+                    </div>
+                </div>
+                <div style="display:flex; gap:1.5cqw; align-items:flex-start; background:rgba(253,203,110,0.1); border-left:.6cqw solid #fdcb6e; border-radius:0 1cqh 1cqh 0; padding:1.2cqh 1.5cqw;">
+                    <div style="min-width:4cqh; height:4cqh; border-radius:50%; background:linear-gradient(135deg,#fdcb6e,#e17055); display:flex; align-items:center; justify-content:center; font-size:2.2cqh; font-weight:800; color:#fff; flex-shrink:0;">4</div>
+                    <div><p style="color:#fdcb6e; font-weight:800; font-size:2cqh; margin-bottom:.4cqh;">🏅 Lihat Referensi &amp; Sertifikat</p><p style="font-size:1.85cqh; margin:0; line-height:1.55;">Buka menu <b>Referensi</b> untuk sumber belajar, lalu ambil <b>Sertifikat</b> dan unduh sebagai JPG untuk dilaporkan kepada gurumu.</p></div>
+                </div>
+            </div>
+            <div style="background:rgba(255,221,89,0.12); padding:1.2cqh 2cqw; border-radius:1cqh; text-align:center; margin-top:1.2cqh; border:.2cqh solid rgba(255,221,89,0.4);">
+                <p style="color:#ffdd59; font-weight:800; font-size:1.9cqh; margin:0;">💡 Klik ikon 🔊 di pojok kiri bawah untuk menyalakan atau mematikan musik latar.</p>
+            </div>
+        </div>
+        <div class="nav-bar">
+            <img src="assets/nav-panduan.png" class="img-nav-btn" title="Menu Utama" onmouseenter="playHoverSound()" onclick="playClickSound(); goToPage('page-menu')" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" alt="Menu Utama">
+            <button class="nav-btn-fallback" style="display:none;" onmouseenter="playHoverSound()" onclick="playClickSound(); goToPage('page-menu')">⬅ Menu Utama</button>
+        </div>
+    </section>
+
+    <!-- ================== PAGE OBJECTIVES ================== -->
+    <section id="page-objectives" class="page page-has-char">
+        <h2 class="page-title">Tujuan Pembelajaran</h2>
+        <div class="content-box" style="display:flex; flex-direction:column;">
+            <div class="obj-slider-wrapper">
+                <!-- SLIDE 1: Identitas -->
+                <div class="obj-slide active" id="obj-slide-0">
+                    <h3 style="margin-bottom:1.2cqh;">Identitas &amp; Capaian Pembelajaran</h3>
+                    <div style="display:flex; gap:1.5cqw; margin-bottom:1.5cqh; flex-wrap:wrap;">
+                        <span class="phase-badge">📚 Kelas XI &nbsp;/&nbsp; Fase F</span>
+                        <span class="phase-badge gold">📖 Pendidikan Pancasila</span>
+                    </div>
+                    <div class="cp-block">
+                        <div class="cp-label">📌 Elemen: Bhinneka Tunggal Ika — Fase F</div>
+                        <p style="color:#ffdd59; font-weight:700; margin-bottom:.6cqh;">Harmoni dalam Keberagaman</p>
+                        <p style="font-size:1.75cqh; color:rgba(255,255,255,0.9);">Peserta didik mampu menganalisis strategi penyelesaian konflik dalam masyarakat yang beragam berdasarkan nilai-nilai Pancasila, serta memahami peran serta warga negara dan gagasan solutif dalam mewujudkan harmoni kehidupan berbangsa dan bernegara.</p>
+                    </div>
+                    <div class="cp-block" style="border-color:rgba(255,255,255,0.3);">
+                        <div class="cp-label" style="color:rgba(255,255,255,0.6);">📄 Dasar Hukum</div>
+                        <p style="font-size:1.65cqh; color:rgba(255,255,255,0.75);">SK Keputusan Kepala BSKAP Kemendikdasmen Nomor 046/H/KR/2025 tentang Capaian Pembelajaran pada Pendidikan Anak Usia Dini, Jenjang Pendidikan Dasar, dan Jenjang Pendidikan Menengah.</p>
+                    </div>
+                    <div class="cp-block" style="border-color:#05c46b;">
+                        <div class="cp-label" style="color:#0be881;">🎯 Topik / Sub Pembahasan</div>
+                        <p><b style="color:#0be881;">C. Strategi Mengatasi Konflik dalam Masyarakat Beragam</b><br><b style="color:#ffdd59;">D. Peran Serta Warga Negara dan Gagasan Solutif dalam Penyelesaian Konflik</b></p>
+                    </div>
+                </div>
+                <!-- SLIDE 2: Tujuan Pembelajaran -->
+                <div class="obj-slide" id="obj-slide-1">
+                    <h3 style="margin-bottom:1.2cqh;">Tujuan Pembelajaran (TP)</h3>
+                    <p style="font-size:1.75cqh; color:rgba(255,255,255,0.7); margin-bottom:1.5cqh;">Setelah pembelajaran, peserta didik mampu:</p>
+                    <div class="tp-item">
+                        <div class="tp-num">1</div>
+                        <div class="tp-text"><em>Menjelaskan</em> prinsip-prinsip Pancasila sebagai dasar penyelesaian konflik dalam masyarakat yang beragam.</div>
+                    </div>
+                    <div class="tp-item">
+                        <div class="tp-num">2</div>
+                        <div class="tp-text"><em>Mengidentifikasi</em> metode-metode efektif penyelesaian konflik (negosiasi, mediasi, arbitrase, dan musyawarah mufakat).</div>
+                    </div>
+                    <div class="tp-item">
+                        <div class="tp-num">3</div>
+                        <div class="tp-text"><em>Menganalisis</em> peran serta warga negara (individu/keluarga, masyarakat, dan negara) dalam penyelesaian konflik.</div>
+                    </div>
+                    <div class="tp-item">
+                        <div class="tp-num">4</div>
+                        <div class="tp-text"><em>Mengevaluasi</em> gagasan-gagasan solutif yang dapat diterapkan untuk mengatasi permasalahan keberagaman secara adil dan berkeadilan.</div>
+                    </div>
+                    <div class="tp-item">
+                        <div class="tp-num">5</div>
+                        <div class="tp-text"><em>Mewujudkan</em> sikap aktif sebagai warga negara yang berkontribusi dalam menjaga harmoni dan persatuan di tengah keberagaman bangsa Indonesia.</div>
+                    </div>
+                </div>
+                <!-- SLIDE 3: Tips Belajar -->
+                <div class="obj-slide" id="obj-slide-2">
+                    <h3 style="margin-bottom:1.2cqh;">💡 Tips Belajar Efektif</h3>
+                    <div class="tip-card">
+                        <div class="tip-num">01</div>
+                        <div><p>Mulai dari tab <b>Prinsip Pancasila</b>: pahami dulu bagaimana setiap sila Pancasila memberikan landasan penyelesaian konflik.</p></div>
+                    </div>
+                    <div class="tip-card">
+                        <div class="tip-num">02</div>
+                        <div><p>Pelajari tab <b>Metode Penyelesaian</b> untuk memahami perbedaan negosiasi, mediasi, arbitrase, dan musyawarah mufakat.</p></div>
+                    </div>
+                    <div class="tip-card">
+                        <div class="tip-num">03</div>
+                        <div><p>Di tab <b>Peran Warga Negara</b>, renungkan: "Apa yang sudah aku lakukan untuk menjaga kedamaian di lingkungan sekitarku?"</p></div>
+                    </div>
+                    <div class="tip-card">
+                        <div class="tip-num">04</div>
+                        <div><p>Kerjakan semua level <b>Latihan</b> untuk menguji pemahamanmu dan kumpulkan poin sebanyak-banyaknya!</p></div>
+                    </div>
+                    <div style="background:rgba(255,221,89,0.12); padding:1.5cqh 2cqw; border-radius:1cqh; text-align:center; margin-top:1cqh; border:.2cqh solid rgba(255,221,89,0.4);">
+                        <p style="color:#ffdd59; font-weight:800; font-size:2cqh; margin:0;">🏆 Target: Raih nilai ≥ 80 untuk mendapatkan Sertifikat!</p>
+                    </div>
+                </div>
+            </div>
+            <div class="obj-nav-row">
+                <button class="obj-arrow" id="obj-prev" onclick="moveObjSlide(-1)" disabled>&#8592; Sebelumnya</button>
+                <div class="obj-dots">
+                    <div class="obj-dot active" onclick="goObjSlide(0)"></div>
+                    <div class="obj-dot" onclick="goObjSlide(1)"></div>
+                    <div class="obj-dot" onclick="goObjSlide(2)"></div>
+                </div>
+                <span class="obj-slide-label" id="obj-counter">1 / 3</span>
+                <button class="obj-arrow" id="obj-next" onclick="moveObjSlide(1)">Berikutnya &#8594;</button>
+            </div>
+        </div>
+        <div class="nav-bar">
+            <img src="assets/nav-tujuan.png" class="img-nav-btn" title="Menu Utama" onmouseenter="playHoverSound()" onclick="playClickSound(); goToPage('page-menu')" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" alt="Menu Utama">
+            <button class="nav-btn-fallback" style="display:none;" onmouseenter="playHoverSound()" onclick="playClickSound(); goToPage('page-menu')">⬅ Menu Utama</button>
+        </div>
+    </section>
+
+    <!-- ================== PAGE LEARN ================== -->
+    <section id="page-learn" class="page page-has-char">
+        <h2 class="page-title">Harmoni dalam Keberagaman</h2>
+        <div class="content-box" style="display:flex; flex-direction:column;">
+            <div class="learn-tab-bar">
+                <button class="learn-tab-btn active" id="ltab-prinsip"   onclick="switchLearnTab('prinsip')">🕊️ Prinsip Pancasila</button>
+                <button class="learn-tab-btn"         id="ltab-metode"   onclick="switchLearnTab('metode')">⚖️ Metode Penyelesaian</button>
+                <button class="learn-tab-btn"         id="ltab-peran"    onclick="switchLearnTab('peran')">👥 Peran Warga Negara</button>
+                <button class="learn-tab-btn"         id="ltab-gagasan"  onclick="switchLearnTab('gagasan')">💡 Gagasan Solutif</button>
+                <button class="learn-tab-btn"         id="ltab-kasus"    onclick="switchLearnTab('kasus')">📰 Studi Kasus</button>
+                <button class="learn-tab-btn"         id="ltab-kebangsaan" onclick="switchLearnTab('kebangsaan')">🌟 Nilai Kebangsaan</button>
+
+            </div>
+
+            <!-- TAB: PRINSIP PANCASILA -->
+            <div class="learn-tab-content active" id="lcontent-prinsip">
+                <h3>Prinsip-Prinsip Pancasila dalam Penyelesaian Konflik</h3>
+                <p style="font-size:1.8cqh; color:rgba(255,255,255,0.8); margin-bottom:1cqh;">Pancasila sebagai dasar negara Indonesia memuat prinsip-prinsip yang dapat dijadikan landasan penyelesaian konflik dalam masyarakat yang beragam.</p>
+                <div class="concept-block">
+                    <span class="kv-tag strategi">SILA 1</span>
+                    <h5>Ketuhanan Yang Maha Esa</h5>
+                    <p>Penyelesaian konflik dilakukan dengan hati yang tenang dan tidak bertentangan dengan kaidah keagamaan. Prinsip ini menjunjung nilai kasih sayang sebagai fondasi penyelesaian konflik antarwarga. Konflik diselesaikan dengan mengutamakan nilai-nilai moral dan etika.</p>
+                </div>
+                <div class="concept-block">
+                    <span class="kv-tag strategi">SILA 2</span>
+                    <h5>Kemanusiaan yang Adil dan Beradab</h5>
+                    <p>Penyelesaian konflik mengutamakan kepentingan kemanusiaan dan memastikan hak asasi manusia tidak dilanggar. Contohnya, menghargai sesama, memberikan kesempatan kepada teman untuk menyampaikan pendapatnya. Setiap manusia diperlakukan sesuai harkat dan martabatnya.</p>
+                </div>
+                <div class="concept-block">
+                    <span class="kv-tag strategi">SILA 3</span>
+                    <h5>Persatuan Indonesia</h5>
+                    <p>Keberadaan orang lain merupakan bagian dari kehidupan kita. Perbedaan yang ada dalam masyarakat dilihat sebagai kekayaan dan kekuatan bangsa. Semakin mengenal berbagai perbedaan, semakin cinta terhadap Indonesia. Contoh: memakai produk dalam negeri, mengenakan batik.</p>
+                </div>
+                <div class="concept-block">
+                    <span class="kv-tag strategi">SILA 4</span>
+                    <h5>Kerakyatan yang Dipimpin oleh Hikmat Kebijaksanaan</h5>
+                    <p>Menekankan pentingnya membangun keterampilan setiap warga negara untuk menyelesaikan masalah (problem solving) melalui musyawarah mufakat. Setiap warga diharapkan aktif berpartisipasi dalam proses pengambilan keputusan bersama.</p>
+                </div>
+                <div class="concept-block">
+                    <span class="kv-tag strategi">SILA 5</span>
+                    <h5>Keadilan Sosial bagi Seluruh Rakyat Indonesia</h5>
+                    <p>Keputusan bersama yang diambil harus mencerminkan keadilan sosial. Penyelesaian konflik mencerminkan karakter peduli, mau berbagi, dan terampil berkolaborasi. Contoh: menyalurkan bantuan pemerintah secara adil dan merata tanpa memandang hubungan persaudaraan.</p>
+                </div>
+            </div>
+
+            <!-- TAB: METODE PENYELESAIAN -->
+            <div class="learn-tab-content" id="lcontent-metode">
+                <h3>Metode-Metode Efektif dalam Penyelesaian Konflik</h3>
+                <p style="font-size:1.8cqh; color:rgba(255,255,255,0.8); margin-bottom:1cqh;">Terdapat empat metode utama penyelesaian konflik yang dapat diterapkan di berbagai lingkungan kehidupan.</p>
+                <div class="concept-block">
+                    <span class="kv-tag strategi">MEDIASI</span>
+                    <h5>Mediasi</h5>
+                    <p>Proses penyelesaian konflik dengan mempertemukan pihak yang terlibat dengan <b>mediator (pihak ketiga yang netral)</b>. Mediator membantu pihak-pihak mencapai kesepakatan yang saling menguntungkan. Contoh: guru atau konselor yang menjadi mediator bagi dua siswa yang berkonflik. Kesepakatan dituangkan dalam surat pernyataan yang ditandatangani kedua pihak.</p>
+                </div>
+                <div class="concept-block">
+                    <span class="kv-tag strategi">NEGOSIASI</span>
+                    <h5>Negosiasi</h5>
+                    <p>Proses penyelesaian konflik dengan <b>berunding</b> untuk mencapai kesepakatan yang dapat diterima semua pihak. Negosiasi dapat dilakukan langsung atau dengan bantuan mediator. Contoh: sekolah mengundang siswa yang keberatan terhadap aturan untuk berdiskusi secara terbuka dan adil, lalu menetapkan kesepakatan bersama secara tertulis.</p>
+                </div>
+                <div class="concept-block">
+                    <span class="kv-tag peran">ARBITRASE</span>
+                    <h5>Arbitrase</h5>
+                    <p>Proses penyelesaian konflik dengan menyerahkan penyelesaian kepada <b>pihak ketiga yang independen dan netral (arbiter)</b>. Keputusan arbiter bersifat <em>final dan mengikat</em> bagi semua pihak. Contoh: dua perusahaan yang bersengketa menunjuk arbiter netral, dan setelah mendengar argumen kedua pihak, arbiter membuat keputusan yang wajib ditaati.</p>
+                </div>
+                <div class="concept-block">
+                    <span class="kv-tag strategi">MUSYAWARAH</span>
+                    <h5>Dialog atau Musyawarah Mufakat</h5>
+                    <p>Proses penyelesaian konflik melalui <b>komunikasi terbuka dan saling menghargai</b>. Semua pihak saling mendengarkan dan memahami argumen satu sama lain untuk mencari solusi yang dapat mendamaikan semua pihak dan mencapai kesepakatan bersama. Metode ini paling selaras dengan nilai Pancasila sila ke-4.</p>
+                </div>
+                <div class="panel-gold" style="margin-top:.5cqh;">
+                    <p style="color:#ffdd59; font-weight:800; font-size:1.85cqh; margin:0 0 .5cqh;">📋 Tujuan Penanganan Konflik (UU No. 7/2012 Pasal 3):</p>
+                    <p style="font-size:1.65cqh; color:#fff; margin:0;">Menciptakan kehidupan masyarakat yang aman, tenteram, dan sejahtera · Memelihara kondisi damai dan harmonis · Meningkatkan tenggang rasa dan toleransi · Melindungi jiwa, harta benda, serta sarana umum · Memberikan perlindungan dan pemenuhan hak korban.</p>
+                </div>
+            </div>
+
+            <!-- TAB: PERAN WARGA NEGARA -->
+            <div class="learn-tab-content" id="lcontent-peran">
+                <h3>Peran Serta Warga Negara dalam Penyelesaian Konflik</h3>
+                <div class="concept-block">
+                    <span class="kv-tag peran">INDIVIDU &amp; KELUARGA</span>
+                    <h5>Peran Individu dan Keluarga</h5>
+                    <p>Keluarga merupakan unit terkecil masyarakat sebagai garda terdepan penanaman nilai. Peran keluarga antara lain: <b>menjadi mediator</b> antaranggota yang berselisih, <b>menghargai perbedaan pendapat</b> antaranggota, <b>bermusyawarah</b> dengan mendengarkan secara aktif, dan <b>menyelesaikan konflik dengan penuh tanggung jawab</b> tanpa merugikan pihak lain.</p>
+                </div>
+                <div class="concept-block">
+                    <span class="kv-tag strategi">MASYARAKAT</span>
+                    <h5>Peran Masyarakat (UU No. 7/2012 Pasal 7 &amp; PP No. 2/2015)</h5>
+                    <p>Setiap warga berkewajiban: mengembangkan sikap toleransi dan saling menghormati kebebasan beribadah · menghormati perbedaan suku, bahasa, dan adat istiadat · mengakui dan memperlakukan manusia sesuai harkat martabatnya · mengakui persamaan derajat tanpa diskriminasi · mengembangkan persatuan atas kebhinekaan · menghargai pendapat dan kebebasan orang lain.</p>
+                </div>
+                <div class="concept-block">
+                    <span class="kv-tag peran">NEGARA</span>
+                    <h5>Peran Negara</h5>
+                    <p>Negara memiliki peran penting dalam <b>pencegahan konflik, penghentian konflik, dan pemulihan pascakonflik</b> secara terencana, terpadu, berkelanjutan, dan terukur. Wujudnya antara lain: menjaga perdamaian dan keamanan, memfasilitasi partisipasi demokrasi, menghargai hak asasi manusia, serta mendorong musyawarah mufakat di semua lapisan masyarakat.</p>
+                </div>
+            </div>
+
+            <!-- TAB: GAGASAN SOLUTIF -->
+            <div class="learn-tab-content" id="lcontent-gagasan">
+                <h3>Gagasan Solutif dalam Penyelesaian Konflik</h3>
+                <p style="font-size:1.8cqh; color:rgba(255,255,255,0.8); margin-bottom:1cqh;">Permasalahan keberagaman membutuhkan solusi yang berkeadilan. Berikut gagasan solutif yang dapat diterapkan:</p>
+                <div class="concept-block">
+                    <h5>🌏 Meningkatkan Kesadaran terhadap Keberagaman</h5>
+                    <p>Menanamkan nilai-nilai toleransi, menghargai perbedaan, dan menjunjung tinggi persatuan dan kesatuan bangsa di kalangan masyarakat, pemerintah, dan institusi pendidikan.</p>
+                </div>
+                <div class="concept-block">
+                    <h5>⚖️ Memberikan Kesempatan yang Sama</h5>
+                    <p>Setiap individu, kelompok agama, suku bangsa, dan budaya memiliki hak yang sama dan harus diberikan kesempatan yang sama dalam pendidikan, pekerjaan, kesehatan, dan pelayanan publik.</p>
+                </div>
+                <div class="concept-block">
+                    <h5>🔄 Menjaga Keseimbangan Hak Individu dan Kepentingan Publik</h5>
+                    <p>Pemerintah harus mengambil keputusan yang berkeadilan dan seimbang untuk memenuhi kepentingan masyarakat secara umum tanpa melanggar hak individu.</p>
+                </div>
+                <div class="concept-block">
+                    <h5>🤝 Mendorong Musyawarah dan Kerja Sama Antarkelompok</h5>
+                    <p>Pemerintah dan masyarakat sipil memfasilitasi pertemuan dan diskusi untuk membahas isu keberagaman serta mencari solusi yang adil dan berkeadilan bagi semua pihak.</p>
+                </div>
+                <div class="concept-block">
+                    <h5>🛡️ Menghormati Hak Asasi Manusia</h5>
+                    <p>Setiap individu memiliki hak yang sama untuk hidup, bebas dari diskriminasi, serta memeluk agama dan kepercayaan yang dianutnya. Ini merupakan prinsip utama dalam mengatasi permasalahan keberagaman.</p>
+                </div>
+            </div>
+
+            <!-- TAB: STUDI KASUS -->
+            <div class="learn-tab-content" id="lcontent-kasus">
+                <h3>Studi Kasus: Konflik dan Penyelesaiannya</h3>
+                <div class="sim-container" style="height:auto; min-height:35cqh;">
+                    <div class="sim-controls">
+                        <button class="sim-btn" onclick="showLearnKasus('bullying', this)">🎓 Bullying Sekolah</button>
+                        <button class="sim-btn" onclick="showLearnKasus('sara', this)">🕌 Konflik SARA</button>
+                        <button class="sim-btn" onclick="showLearnKasus('kerja', this)">💼 Konflik Kerja</button>
+                        <button class="sim-btn" onclick="showLearnKasus('keluarga', this)">🏠 Konflik Keluarga</button>
+                    </div>
+                    <div class="sim-display">
+                        <div class="sim-visual" id="learn-kasus-visual"><span style="font-size:3cqh; color:rgba(255,255,255,0.4); text-align:center; padding:2cqw;">Pilih kasus di sebelah kiri</span></div>
+                        <div class="sim-text" id="learn-kasus-text">
+                            <h4>Keterangan Kasus</h4>
+                            <p>Pilih salah satu kasus untuk mempelajari contoh penyelesaian konflik dalam kehidupan nyata.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: NILAI KEBANGSAAN -->
+            <div class="learn-tab-content" id="lcontent-kebangsaan">
+                <h3>🌟 Nilai-Nilai Kebangsaan sebagai Perekat Harmoni</h3>
+                <p style="font-size:1.8cqh; color:rgba(255,255,255,0.8); margin-bottom:1cqh;">Selain strategi dan metode, harmoni dalam keberagaman dibangun di atas pondasi nilai-nilai kebangsaan yang harus dihayati setiap warga negara.</p>
+                <div class="concept-block">
+                    <span class="kv-tag strategi">BHINNEKA TUNGGAL IKA</span>
+                    <h5>Semboyan Pemersatu Bangsa</h5>
+                    <p>Bhinneka Tunggal Ika (berbeda-beda tetapi tetap satu) adalah semboyan bangsa Indonesia yang tertuang dalam lambang Garuda Pancasila. Semboyan ini bukan sekadar slogan, melainkan <b>pedoman hidup</b> yang mengakui keberagaman suku, agama, bahasa, dan budaya sebagai kekuatan, bukan kelemahan. Warga negara yang menghayati semboyan ini akan mampu merayakan perbedaan dan menjadikannya sumber kreativitas serta kekuatan bersama.</p>
+                </div>
+                <div class="concept-block">
+                    <span class="kv-tag peran">NASIONALISME</span>
+                    <h5>Nasionalisme Inklusif</h5>
+                    <p>Nasionalisme yang sehat bukan berarti menutup diri atau merendahkan pihak lain, melainkan rasa cinta tanah air yang <b>inklusif dan terbuka</b>. Nasionalisme inklusif mendorong warga negara untuk: (1) Menghargai perjuangan para pendiri bangsa; (2) Aktif berpartisipasi dalam pembangunan; (3) Membela persatuan tanpa sikap chauvinistik; (4) Menerima kritik sebagai bentuk kasih sayang terhadap bangsa.</p>
+                </div>
+                <div class="concept-block">
+                    <span class="kv-tag strategi">WAWASAN NUSANTARA</span>
+                    <h5>Perspektif Geografis dan Budaya</h5>
+                    <p>Wawasan Nusantara adalah cara pandang bangsa Indonesia terhadap diri dan lingkungannya berdasarkan Pancasila dan UUD 1945. Dalam konteks harmoni keberagaman, wawasan ini mengajarkan bahwa: <b>keanekaragaman bukan hambatan</b>, melainkan potensi; setiap daerah menyumbangkan keunikan yang memperkaya bangsa; dan kesatuan wilayah NKRI harus dijaga oleh seluruh warga negara dari Sabang sampai Merauke.</p>
+                </div>
+                <div class="concept-block">
+                    <span class="kv-tag peran">LITERASI BUDAYA</span>
+                    <h5>Literasi Budaya dan Kewargaan</h5>
+                    <p>Literasi budaya adalah kemampuan memahami dan menghargai berbagai tradisi, seni, nilai, dan kepercayaan yang ada di Indonesia. Literasi kewargaan adalah pemahaman tentang hak dan kewajiban sebagai warga negara. Keduanya saling menopang: warga yang melek budaya akan lebih toleran, dan warga yang melek kewargaan akan lebih bertanggung jawab dalam menjaga harmoni.</p>
+                </div>
+                <div class="concept-block">
+                    <span class="kv-tag strategi">DIALOG ANTARBUDAYA</span>
+                    <h5>Dialog Antarbudaya sebagai Investasi Jangka Panjang</h5>
+                    <p>Dialog antarbudaya adalah proses <b>saling mengenal, memahami, dan menghargai</b> perbedaan secara mendalam. Contoh konkretnya: festival budaya nasional, program pertukaran pelajar antardaerah, komunitas seni lintas etnis, dan pendidikan multikultural di sekolah. Dialog ini bukan hanya mencegah konflik, tetapi juga membangun modal sosial (social capital) yang memperkuat ketahanan bangsa dalam jangka panjang.</p>
+                </div>
+                <div class="panel-gold" style="margin-top:.5cqh;">
+                    <p style="color:#ffdd59; font-weight:800; font-size:1.85cqh; margin:0 0 .5cqh;">💡 Kutipan Inspiratif:</p>
+                    <p style="font-size:1.65cqh; color:#fff; margin:0; font-style:italic;">"Kita semua berbeda, tapi kita semua Indonesia. Perbedaan itu bukan penghalang, melainkan jembatan menuju persatuan yang lebih kuat."</p>
+                </div>
+            </div>
+
+
+
+
+        </div>
+        <div class="nav-bar">
+            <img src="assets/nav-materi.png" class="img-nav-btn" title="Menu Utama" onmouseenter="playHoverSound()" onclick="playClickSound(); goToPage('page-menu')" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" alt="Menu Utama">
+            <button class="nav-btn-fallback" style="display:none;" onmouseenter="playHoverSound()" onclick="playClickSound(); goToPage('page-menu')">⬅ Menu Utama</button>
+        </div>
+    </section>
+
+    <!-- ================== PAGE EXERCISE MENU ================== -->
+    <section id="page-exercise-menu" class="page page-has-char">
+        <h2 class="page-title">Pilih Level Latihan</h2>
+        <div class="content-box" style="display:flex; flex-direction:column; justify-content:flex-start; overflow-y:auto;">
+            <p class="quiz-points-note">🏆 Kumpulkan maksimal <b style="color:#ffdd59;">100 Poin!</b> &nbsp;·&nbsp; Selesaikan semua level untuk mendapat sertifikat.</p>
+            <div class="quiz-grid">
+                <div class="quiz-card" onmouseenter="playHoverSound()" onclick="playClickSound(); startLevel1()">
+                    <div class="quiz-card-icon">🌱</div>
+                    <div class="quiz-card-info">
+                        <div class="quiz-card-title">Level 1 — Menjodohkan Istilah</div>
+                        <div class="quiz-card-desc">Cocokkan istilah metode konflik dengan definisinya</div>
+                    </div>
+                    <div class="quiz-card-badge qb-green" id="s-lvl1">6 Poin</div>
+                </div>
+                <div class="quiz-card" onmouseenter="playHoverSound()" onclick="playClickSound(); startLevel4()">
+                    <div class="quiz-card-icon">📋</div>
+                    <div class="quiz-card-info">
+                        <div class="quiz-card-title">Level 2 — Isi dengan Drop-Down</div>
+                        <div class="quiz-card-desc">Lengkapi kalimat rumpang dengan memilih kata yang tepat</div>
+                    </div>
+                    <div class="quiz-card-badge qb-blue" id="s-lvl4">10 Poin</div>
+                </div>
+                <div class="quiz-card" onmouseenter="playHoverSound()" onclick="playClickSound(); startLevel5()">
+                    <div class="quiz-card-icon">🃏</div>
+                    <div class="quiz-card-info">
+                        <div class="quiz-card-title">Level 3 — Klasifikasi Konsep</div>
+                        <div class="quiz-card-desc">Klasifikasikan kartu konsep ke dalam kategori yang tepat berdasarkan materi</div>
+                    </div>
+                    <div class="quiz-card-badge" style="background:rgba(116,185,255,0.25);color:#74b9ff;border:.15cqh solid #74b9ff;" id="s-lvl5">16 Poin</div>
+                </div>
+                <div class="quiz-card" onmouseenter="playHoverSound()" onclick="playClickSound(); startLevel3()">
+                    <div class="quiz-card-icon">🏆</div>
+                    <div class="quiz-card-info">
+                        <div class="quiz-card-title">Level 4 — Pilihan Ganda (5 Opsi)</div>
+                        <div class="quiz-card-desc">Uji pemahamanmu tentang strategi mengatasi konflik dan peran warga negara</div>
+                    </div>
+                    <div class="quiz-card-badge" style="background:rgba(253,121,168,0.25);color:#fd79a8;border:.15cqh solid #fd79a8;" id="s-lvl3">20 Poin</div>
+                </div>
+                <div class="quiz-card" onmouseenter="playHoverSound()" onclick="playClickSound(); startLevel2()">
+                    <div class="quiz-card-icon">🔢</div>
+                    <div class="quiz-card-info">
+                        <div class="quiz-card-title">Level 5 — Urutkan Langkah</div>
+                        <div class="quiz-card-desc">Susun langkah-langkah penyelesaian konflik secara berurutan dengan benar</div>
+                    </div>
+                    <div class="quiz-card-badge qb-red" id="s-lvl2">48 Poin</div>
+                </div>
+            </div>
+        </div>
+        <div class="nav-bar">
+            <img src="assets/nav-latihan.png" class="img-nav-btn" title="Menu Utama" onmouseenter="playHoverSound()" onclick="playClickSound(); goToPage('page-menu')" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" alt="Menu Utama">
+            <button class="nav-btn-fallback" style="display:none;" onmouseenter="playHoverSound()" onclick="playClickSound(); goToPage('page-menu')">⬅ Menu Utama</button>
+        </div>
+    </section>
+
+    <!-- ================== PAGE LEVEL 1 ================== -->
+    <section id="page-level-1" class="page page-has-char">
+        <h2 class="page-title">Level 1: Menjodohkan Istilah</h2>
+        <div class="content-box" style="padding-top:1.2cqh;">
+            <p style="text-align:center; color:#ffdd59; font-weight:800; font-size:1.8cqh; margin-bottom:1cqh;">
+                1️⃣ Klik <span style="color:#ff7675;">istilah</span> di atas &rarr; 2️⃣ Klik <span style="color:#74b9ff;">definisi</span> yang sesuai di bawah!
+            </p>
+            <div class="match-layout">
+                <div class="match-top-row" id="col-terms"></div>
+                <div class="match-divider"></div>
+                <div class="match-defs-grid" id="col-defs"></div>
+            </div>
+            <div id="lvl1-done" style="display:none; text-align:center; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(10,20,40,0.97); padding:4cqh 5cqw; border-radius:2cqh; box-shadow:0 1cqh 3cqh rgba(0,0,0,0.8); z-index:10; width:80cqw; max-width:50cqw; border:.2cqh solid rgba(255,221,89,0.4);">
+                <h3 id="lvl1-msg" style="color:#0be881; font-size:4cqh; border:none;">&#127881; Level Selesai!</h3>
+                <div style="display:flex; justify-content:center; margin-top:3cqh;">
+                    <button class="nav-btn-fallback primary" onmouseenter="playHoverSound()" onclick="playClickSound(); endLevel('page-exercise-menu')">Lanjut &#9658;</button>
+                </div>
+            </div>
+        </div>
+        <div class="nav-bar" style="justify-content: center;">
+            <button class="nav-btn-fallback" onmouseenter="playHoverSound()" onclick="playClickSound(); endLevel('page-exercise-menu')">&larr; Keluar</button>
+        </div>
+    </section>
+
+    <!-- ================== PAGE LEVEL 2 ================== -->
+    <section id="page-level-2" class="page page-has-char">
+        <h2 class="page-title">Level 5: Urutkan Langkah</h2>
+        <div class="content-box">
+            <div id="lvl2-game-area" style="display:flex; flex-direction:column; flex-grow:1; overflow-y:auto;">
+                <div class="passage-box" id="lvl2-skenario-box">💡 Memuat skenario...</div>
+                <p style="font-size:1.8cqh; font-weight:800; color:#ffdd59; margin-bottom:1cqh;" id="lvl2-instruksi">🔢 Klik langkah-langkah di bawah sesuai urutan yang benar (dari pertama hingga terakhir):</p>
+                <div id="lvl2-slots" style="display:flex; flex-direction:column; gap:.6cqh; margin-bottom:1cqh;"></div>
+                <div id="lvl2-choices" style="display:flex; flex-direction:column; gap:.6cqh;"></div>
+                <div id="lvl2-feedback" style="display:none; font-size:1.7cqh; font-weight:700; padding:.8cqh 1.2cqw; border-radius:.8cqh; margin-top:.8cqh;"></div>
+                <div style="display:flex; gap:1.5cqw; margin-top:1.2cqh; flex-wrap:wrap;">
+                    <button id="lvl2-check-btn" class="nav-btn-fallback primary btn-locked" onclick="checkLvl2Order()" disabled style="font-size:1.8cqh;">&#128269; Periksa Urutan</button>
+                    <button id="lvl2-reset-btn" class="nav-btn-fallback" onclick="resetLvl2Order()" style="font-size:1.8cqh;">&#128260; Reset</button>
+                </div>
+                <div id="lvl2-pembahasan" style="display:none; background:rgba(255,221,89,0.12); border-left:.6cqw solid #ffdd59; padding:1.5cqh 2cqw; border-radius:0 1cqh 1cqh 0; margin-top:1cqh;">
+                    <p class="pb-title" style="color:#ffdd59; font-weight:800; font-size:1.8cqh; margin-bottom:.5cqh;">📝 Pembahasan:</p>
+                    <p id="lvl2-pembahasan-text" style="font-size:1.75cqh; color:#fff; line-height:1.6;"></p>
+                    <button class="nav-btn-fallback primary" style="margin-top:1.5cqh; font-size:1.8cqh;" onclick="nextLvl2Question()">Lanjut ▶</button>
+                </div>
+            </div>
+            <div id="lvl2-result" class="score-screen" style="display: none;">
+                <h3 id="lvl2-msg" style="font-size: 4cqh; color: #ffdd59;">Level Selesai!</h3>
+                <div class="score-text" id="lvl2-score">0/5</div>
+                <div style="display:flex; justify-content:center; margin-top:3cqh;">
+                    <button class="nav-btn-fallback primary" onmouseenter="playHoverSound()" onclick="playClickSound(); endLevel('page-exercise-menu')">Lanjut ▶</button>
+                </div>
+            </div>
+        </div>
+        <div class="nav-bar" style="justify-content: center;">
+            <button class="nav-btn-fallback" onmouseenter="playHoverSound()" onclick="playClickSound(); endLevel('page-exercise-menu')">⬅ Keluar</button>
+        </div>
+    </section>
+
+    <!-- ================== PAGE LEVEL 3 ================== -->
+    <section id="page-level-3" class="page page-has-char">
+        <h2 class="page-title">Level 4: Pilihan Ganda</h2>
+        <div class="content-box" style="display:flex; flex-direction:column; gap:1cqh;">
+            <!-- Progress bar row -->
+            <div class="lvl3-progress-row">
+                <span class="lvl3-qnum-badge">❓ Soal <span id="lvl3-qnum-cur">1</span> / <span id="lvl3-qnum-tot">10</span></span>
+                <div class="lvl3-prog-bar"><div class="lvl3-prog-fill" id="lvl3-prog-fill" style="width:10%;"></div></div>
+                <span class="lvl3-prog-label" id="lvl3-score-live">✅ 0 benar</span>
+            </div>
+            <!-- Game area: soal → opsi → pembahasan (vertikal) -->
+            <div id="lvl3-game-area" class="lvl3-layout">
+                <div class="lvl3-left">
+                    <div class="question-box" id="lvl3-question">Memuat soal...</div>
+                </div>
+                <div class="lvl3-right">
+                    <div class="options-container" id="lvl3-options"></div>
+                </div>
+                <div class="lvl3-pembahasan-box" id="lvl3-pembahasan">
+                    <div class="pb-label">📝 Pembahasan:</div>
+                    <p class="pb-text" id="lvl3-pembahasan-text"></p>
+                    <button class="nav-btn-fallback primary" style="margin-top:1.2cqh; font-size:1.7cqh;" onclick="nextLvl3Question()">Soal Berikutnya ▶</button>
+                </div>
+            </div>
+            <!-- Result screen -->
+            <div id="lvl3-result" class="score-screen" style="display: none;">
+                <h3 id="lvl3-msg" style="font-size: 4cqh; color: #ffdd59;">Level Selesai!</h3>
+                <div class="score-text" id="lvl3-score">0/10</div>
+                <div style="display:flex; justify-content:center; margin-top:3cqh;">
+                    <button class="nav-btn-fallback primary" onmouseenter="playHoverSound()" onclick="playClickSound(); endLevel('page-exercise-menu')">Lanjut ▶</button>
+                </div>
+            </div>
+        </div>
+        <div class="nav-bar" style="justify-content: center;">
+            <button class="nav-btn-fallback" onmouseenter="playHoverSound()" onclick="playClickSound(); endLevel('page-exercise-menu')">⬅ Keluar</button>
+        </div>
+    </section>
+
+    <!-- ================== PAGE CERTIFICATE ================== -->
+    <section id="page-certificate" class="page page-has-char">
+        <div class="certificate-wrapper">
+            <div class="certificate-inner">
+                <div class="cert-shimmer"></div>
+                <div class="cert-corner tl">❧</div>
+                <div class="cert-corner tr">❧</div>
+                <div class="cert-corner bl">❧</div>
+                <div class="cert-corner br">❧</div>
+                <div class="cert-header">Sertifikat Pencapaian</div>
+                <div class="cert-divider"></div>
+                <p style="font-size:1.7cqh; color:#7a5a1a; font-weight:500; margin:.3cqh 0;">Dengan bangga diberikan kepada</p>
+                <div class="cert-seal">🏅</div>
+                <div class="cert-name" id="cert-display-name">Nama Siswa</div>
+                <div class="cert-ribbon">Telah Menyelesaikan</div>
+                <p style="font-size:1.85cqh; font-weight:700; color:#5a3a00; margin:.3cqh 0 .2cqh;">Media Pembelajaran Interaktif</p>
+                <p style="font-size:2cqh; font-weight:800; color:#ce1126; margin:.2cqh 0;">Pendidikan Pancasila: Harmoni dalam Keberagaman</p>
+                <p style="font-size:1.55cqh; color:#8a6a2a; margin-top:.3cqh;">Elemen Bhinneka Tunggal Ika · Fase F / Kelas XI SMA</p>
+                <div class="cert-divider"></div>
+                <div class="cert-score-box">
+                    <div style="font-size:1.4cqh; color:rgba(255,200,80,0.7); text-transform:uppercase; letter-spacing:.1cqw;">Nilai Akhir</div>
+                    <div class="cert-score-number" id="cert-display-score">0</div>
+                    <div style="font-size:1.3cqh; color:rgba(255,200,80,0.6); margin-top:.2cqh;">dari 100</div>
+                </div>
+            </div>
+        </div>
+        <div class="nav-bar" style="justify-content: center; gap: 2cqw; width: 100% !important; max-width: 100% !important; align-self: center; flex-wrap: wrap;">
+            <button class="nav-btn-fallback" onmouseenter="playHoverSound()" onclick="playClickSound(); goToPage('page-menu')">⬅ Menu Utama</button>
+            <button class="nav-btn-fallback yellow" onmouseenter="playHoverSound()" onclick="playClickSound(); printCertificateOnly()">🖨️ Cetak PDF</button>
+            <button class="nav-btn-fallback" style="background:linear-gradient(135deg,#0be881,#05c46b);color:#1a1a2e;border-color:#05c46b;" onmouseenter="playHoverSound()" onclick="playClickSound(); downloadCertificateAsJPG()">📷 Unduh JPG</button>
+        </div>
+    </section>
+
+    <!-- ================== PAGE LEVEL 4 ================== -->
+    <section id="page-level-4" class="page page-has-char">
+        <h2 class="page-title">Level 2: Isi Drop-Down</h2>
+        <div class="content-box" style="display:flex; flex-direction:column;">
+            <div class="passage-box">📋 <b>Petunjuk:</b> Pilih kata yang tepat dari menu drop-down untuk melengkapi kalimat. Setelah semua dijawab, klik <b>Periksa Jawaban</b>.</div>
+            <div id="lvl4-game-area" style="display:flex; flex-direction:column; flex-grow:1; overflow-y:auto;">
+                <div id="lvl4-questions"></div>
+                <button id="lvl4-check-btn" class="nav-btn-fallback primary btn-locked" style="margin:1.5cqh auto 0; font-size:2cqh;" onclick="checkLvl4()" disabled>🔍 Periksa Jawaban</button>
+                <div id="lvl4-pembahasan" class="dropdown-pembahasan">
+                    <div class="pb-title">📝 Pembahasan Jawaban:</div>
+                    <div id="lvl4-pembahasan-text"></div>
+                    <button class="nav-btn-fallback primary" style="margin-top:1.5cqh;" onclick="playClickSound(); endLevel('page-exercise-menu')">Lanjut ▶</button>
+                </div>
+            </div>
+            <div id="lvl4-result" class="score-screen" style="display: none;">
+                <h3 id="lvl4-msg" style="font-size: 3.5cqh; color: #ffdd59;">Level Selesai!</h3>
+                <div class="score-text" id="lvl4-score">0/5</div>
+                <button class="nav-btn-fallback primary" style="margin-top:3cqh;" onmouseenter="playHoverSound()" onclick="playClickSound(); endLevel('page-exercise-menu')">Lanjut ▶</button>
+            </div>
+        </div>
+        <div class="nav-bar" style="justify-content: center;">
+            <button class="nav-btn-fallback" onmouseenter="playHoverSound()" onclick="playClickSound(); endLevel('page-exercise-menu')">⬅ Keluar</button>
+        </div>
+    </section>
+
+    <!-- ================== PAGE LEVEL 5 ================== -->
+    <section id="page-level-5" class="page page-has-char">
+        <h2 class="page-title">Level 3: Klasifikasi Konsep</h2>
+        <div class="content-box" style="display:flex; flex-direction:column;">
+            <div id="lvl5-game-area" style="display:flex; flex-direction:column; flex-grow:1; overflow-y:auto;">
+                <div class="passage-box">🃏 <b>Petunjuk:</b> Klik salah satu kartu konsep, lalu klik kategori yang sesuai untuk mengklasifikasikannya. Ulangi hingga semua kartu terklasifikasi!</div>
+                <div id="lvl5-progress-bar" style="text-align:center; font-size:1.8cqh; color:rgba(255,255,255,0.65); margin-bottom:.8cqh;">Kartu tersisa: <span id="lvl5-remaining">0</span></div>
+                <div id="lvl5-categories" style="display:flex; gap:1.5cqw; margin-bottom:1.2cqh; flex-shrink:0;"></div>
+                <div id="lvl5-cards-area" style="display:flex; flex-wrap:wrap; gap:.8cqh; flex-grow:1; align-content:flex-start;"></div>
+                <div id="lvl5-feedback" style="display:none; padding:.8cqh 1.5cqw; border-radius:1cqh; font-size:1.75cqh; font-weight:700; margin-top:.5cqh; text-align:center;"></div>
+            </div>
+            <div id="lvl5-result" style="display:none; flex-direction:column; flex-grow:1; overflow-y:auto;">
+                <div class="score-screen" style="flex-shrink:0;">
+                    <h3 id="lvl5-msg" style="font-size:3.5cqh; color:#ffdd59;">Level Selesai!</h3>
+                    <div class="score-text" id="lvl5-score">0</div>
+                    <p style="font-size:1.8cqh; color:rgba(255,255,255,0.7); margin-top:1cqh;" id="lvl5-detail"></p>
+                </div>
+                <div id="lvl5-review" style="margin-top:1.5cqh;"></div>
+                <div style="text-align:center; margin-top:2cqh; flex-shrink:0;">
+                    <button class="nav-btn-fallback primary" onmouseenter="playHoverSound()" onclick="playClickSound(); endLevel('page-exercise-menu')">Lanjut ▶</button>
+                </div>
+            </div>
+        </div>
+        <div class="nav-bar" style="justify-content: center;">
+            <button class="nav-btn-fallback" onmouseenter="playHoverSound()" onclick="playClickSound(); endLevel('page-exercise-menu')">⬅ Keluar</button>
+        </div>
+    </section>
+
+    <!-- ================== PAGE REFERENCES ================== -->
+    <section id="page-references" class="page page-has-char">
+        <h2 class="page-title">Sumber Referensi</h2>
+        <div class="content-box">
+            <h3>Peraturan Perundang-Undangan</h3>
+            <div class="concept-block">
+                <div class="concept-row">
+                    <span class="concept-icon">📜</span>
+                    <div>
+                        <h5>UU No. 7 Tahun 2012 tentang Penanganan Konflik Sosial</h5>
+                        <p>Mengatur tujuan penanganan konflik sosial (Pasal 3), kewajiban warga negara memelihara kondisi damai (Pasal 7), serta peran serta masyarakat dalam pencegahan, penghentian, dan pemulihan pascakonflik.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="concept-block">
+                <div class="concept-row">
+                    <span class="concept-icon">⚖️</span>
+                    <div>
+                        <h5>Peraturan Pemerintah No. 2 Tahun 2015</h5>
+                        <p>Peraturan pelaksana UU No. 7/2012 yang mengatur penyelesaian perselisihan secara damai melibatkan tokoh agama, tokoh adat, tokoh masyarakat, pranata adat, dan pranata sosial.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="concept-block">
+                <div class="concept-row">
+                    <span class="concept-icon">🤝</span>
+                    <div>
+                        <h5>UU No. 52 Tahun 2009 tentang Perkembangan Penduduk dan Pembangunan Keluarga</h5>
+                        <p>Mengatur peran keluarga sebagai bagian integral dari pembangunan budaya, sosial, dan ekonomi bangsa dalam menanamkan nilai-nilai Pancasila dan ketahanan individu menghadapi konflik.</p>
+                    </div>
+                </div>
+            </div>
+            <h3 style="margin-top:1.5cqh;">Buku &amp; Kurikulum</h3>
+            <div class="concept-block">
+                <div class="concept-row">
+                    <span class="concept-icon">📚</span>
+                    <div>
+                        <h5>Buku Teks Pendidikan Pancasila Kelas XI SMA</h5>
+                        <p>Kemendikbudristek RI. <em>Pendidikan Pancasila untuk SMA/MA/SMK/MAK Kelas XI.</em> Jakarta: Pusat Perbukuan, 2023. Bab 3: Harmoni dalam Keberagaman, hlm. 88–101.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="concept-block">
+                <div class="concept-row">
+                    <span class="concept-icon">📖</span>
+                    <div>
+                        <h5>Referensi Ilmiah</h5>
+                        <p>Latif, Y. (2020). <em>Pendidikan yang Berkebudayaan.</em> Jakarta: Gramedia. hlm. 324–325.<br>
+                        Lickona, T. (2012). <em>Educating for Character.</em> Terjemahan. hlm. 280–282.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="concept-block">
+                <div class="concept-row">
+                    <span class="concept-icon">🎯</span>
+                    <div>
+                        <h5>Capaian Pembelajaran (CP) Fase F</h5>
+                        <p>SK Kepala BSKAP Kemendikdasmen Nomor 046/H/KR/2025 tentang Capaian Pembelajaran Pendidikan Pancasila jenjang SMA Fase F, Elemen Bhinneka Tunggal Ika.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="concept-block">
+                <div class="concept-row">
+                    <span class="concept-icon">🌐</span>
+                    <div>
+                        <h5>Sumber Digital</h5>
+                        <p>• <b>JDIH BPK RI</b> — jdih.bpk.go.id (teks peraturan perundang-undangan)<br>
+                           • <b>CNN Indonesia</b> — Artikel: "Kisah Farhan, Jadi Korban Bully Sejak di Bangku SMA"</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="nav-bar">
+            <img src="assets/nav-referensi.png" class="img-nav-btn" title="Menu Utama" onmouseenter="playHoverSound()" onclick="playClickSound(); goToPage('page-menu')" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" alt="Menu Utama">
+            <button class="nav-btn-fallback" style="display:none;" onmouseenter="playHoverSound()" onclick="playClickSound(); goToPage('page-menu')">⬅ Menu Utama</button>
+        </div>
+    </section>
+
+</div><!-- end .app-container -->
+
+<!-- ===== STUDI KASUS DATA ===== -->
+<script>
+const kasusData = {
+    bullying: {
+        visual: "🎓",
+        label: "⚠️ KASUS KONFLIK",
+        title: "Bullying di Sekolah — Kasus Farhan",
+        text: `<b>Kasus:</b> Muhammad Farhan (19), mahasiswa berkebutuhan khusus, menjadi korban perundungan (bullying) sejak semester satu. Video perundungan yang memperlihatkan teman-temannya menarik-narik tasnya viral di media sosial.<br><br>
+        <b>Strategi Penyelesaian:</b> Menggunakan metode <b>mediasi</b> — pihak kampus menunjuk konselor sebagai mediator, mempertemukan pelaku dan korban secara terpisah terlebih dahulu, lalu bersama-sama mencari solusi.<br><br>
+        <b>Nilai Pancasila:</b> Sila ke-2 (Kemanusiaan yang Adil dan Beradab) — setiap orang berhak diperlakukan sesuai harkat dan martabatnya. Bullying melanggar hak atas rasa aman dan harga diri.`
+    },
+    sara: {
+        visual: "🕌",
+        label: "⚠️ KASUS KONFLIK",
+        title: "Konflik Antarkomunitas Agama/Suku",
+        text: `<b>Kasus:</b> Terjadi ketegangan antara dua kelompok masyarakat yang berbeda agama akibat kesalahpahaman dalam pembangunan rumah ibadah di suatu daerah.<br><br>
+        <b>Strategi Penyelesaian:</b> <b>Dialog dan musyawarah mufakat</b> difasilitasi tokoh agama dan pemerintah daerah. Kedua belah pihak dipertemukan untuk saling mendengar dan mencapai kesepakatan bersama.<br><br>
+        <b>Nilai Pancasila:</b> Sila ke-1 dan ke-3 — menjunjung kasih sayang antarsesama dan memperkuat persatuan. Perbedaan keyakinan adalah kekayaan bangsa, bukan sumber perpecahan.`
+    },
+    kerja: {
+        visual: "💼",
+        label: "⚠️ KASUS KONFLIK",
+        title: "Sengketa Kontrak antara Dua Perusahaan",
+        text: `<b>Kasus:</b> Dua perusahaan berselisih karena pekerjaan kontraktor dianggap tidak memenuhi standar kualitas yang telah disepakati dalam kontrak kerja sama.<br><br>
+        <b>Strategi Penyelesaian:</b> <b>Arbitrase</b> — kedua perusahaan sepakat menunjuk arbiter netral. Setelah mendengar argumen masing-masing pihak, arbiter membuat keputusan yang bersifat final dan mengikat bagi keduanya.<br><br>
+        <b>Nilai Pancasila:</b> Sila ke-5 — keadilan sosial mengharuskan keputusan yang berimbang, tidak berpihak, dan dapat diterima semua pihak.`
+    },
+    keluarga: {
+        visual: "🏠",
+        label: "✅ PENYELESAIAN KONFLIK",
+        title: "Perbedaan Pendapat dalam Keluarga",
+        text: `<b>Kasus:</b> Terjadi ketidaksepakatan antara orang tua dan anak tentang pilihan jurusan kuliah. Orang tua menginginkan jurusan ekonomi, sedangkan anak bercita-cita menjadi seniman.<br><br>
+        <b>Strategi Penyelesaian:</b> <b>Negosiasi</b> — orang tua dan anak duduk bersama, saling menyampaikan alasan dengan terbuka. Masing-masing pihak memahami sudut pandang yang lain, lalu mencapai kesepakatan yang dapat diterima keduanya.<br><br>
+        <b>Nilai Pancasila:</b> Sila ke-4 — musyawarah untuk mufakat dalam skala keluarga. Setiap anggota keluarga berhak berpendapat dan wajib menghargai pendapat anggota lain.`
+    }
+};
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+    let username = "";
+    let userAvatar = "";
+    let totalPoints = 0;
+    const MAX_POINTS = 100;
+    let saves = { lvl1: false, lvl2: false, lvl3: false, lvl4: false, lvl5: false };
+
+    let isSoundOn = true;
+    let bgMusicStarted = false;
+    const bgMusic      = document.getElementById('audio-bg');
+    const clickAudio   = document.getElementById('audio-click');
+    const correctAudio = document.getElementById('audio-correct');
+    const wrongAudio   = document.getElementById('audio-wrong');
+    if (bgMusic)      bgMusic.volume      = 0.4;
+    if (clickAudio)   clickAudio.volume   = 0.7;
+    if (correctAudio) correctAudio.volume = 0.8;
+    if (wrongAudio)   wrongAudio.volume   = 0.8;
+
+    function startBgMusic() { if (bgMusicStarted) return; bgMusicStarted = true; if (isSoundOn && bgMusic) bgMusic.play().catch(()=>{}); }
+    function toggleGlobalSound() {
+        isSoundOn = !isSoundOn;
+        const btn = document.getElementById('global-sound-btn');
+        btn.innerText = isSoundOn ? '🔊' : '🔇';
+        if (isSoundOn) { if (bgMusic) bgMusic.play().catch(()=>{}); } else { if (bgMusic) bgMusic.pause(); }
+    }
+    function playClickSound()   { if (isSoundOn && clickAudio)   { clickAudio.currentTime=0;   clickAudio.play().catch(()=>{}); } }
+    function playCorrect()      { if (isSoundOn && correctAudio) { correctAudio.currentTime=0; correctAudio.play().catch(()=>{}); } }
+    function playWrong()        { if (isSoundOn && wrongAudio)   { wrongAudio.currentTime=0;   wrongAudio.play().catch(()=>{}); } }
+    function playHoverSound()   { /* silent hover */ }
+
+    function goToPage(pageId) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById(pageId).classList.add('active');
+        const charPages = ['page-home','page-objectives','page-learn','page-example','page-sim','page-exercise-menu','page-level-1','page-level-2','page-level-3','page-level-4','page-level-5','page-guide','page-certificate','page-references'];
+        const showChar = charPages.includes(pageId);
+        const charContainer = document.getElementById('global-character-container');
+        charContainer.style.display = showChar ? 'flex' : 'none';
+        const huds = document.querySelectorAll('.hud-box');
+        const profile = document.getElementById('profile-container');
+        const showHud = !['page-welcome','page-character'].includes(pageId);
+        huds.forEach(h => h.style.display = showHud ? 'flex' : 'none');
+        if (profile) profile.style.display = showHud ? 'flex' : 'none';
+        if (pageId === 'page-exercise-menu') updateMenuStatus();
+    }
+
+    function requestFullScreen() { const el = document.documentElement; if (el.requestFullscreen) el.requestFullscreen().catch(()=>{}); }
+
+    function goToCharacterSelect() {
+        const input = document.getElementById('username-input').value.trim();
+        if (input === "") { alert("Silakan masukkan NAMA terlebih dahulu!"); return; }
+        username = input;
+        playClickSound(); startBgMusic(); goToPage('page-character');
+    }
+
+    function selectAvatar(type) {
+        playClickSound();
+        document.querySelectorAll('.avatar-btn').forEach(btn => btn.classList.remove('selected'));
+        document.getElementById('btn-' + type).classList.add('selected');
+        userAvatar = type;
+    }
+
+    function loginUser() {
+        if (userAvatar === "") { alert("Silakan pilih KARAKTER terlebih dahulu!"); playWrong(); return; }
+        document.getElementById('display-username').innerText = username;
+        document.getElementById('display-username-hud').innerText = username;
+        const avatarSrc = (userAvatar === 'boy') ? "assets/boy.png" : "assets/girl.png";
+        document.getElementById('display-avatar').src = avatarSrc;
+        document.getElementById('global-character-img').src = (userAvatar === 'boy') ? "assets/boy-full.png" : "assets/girl-full.png";
+        document.getElementById('global-character-img').onerror = function() { this.style.display='none'; };
+        playClickSound(); requestFullScreen(); saveData(); goToPage('page-home');
+    }
+
+    function updatePointsDisplay() {
+        if (totalPoints > MAX_POINTS) totalPoints = MAX_POINTS;
+        document.getElementById('display-points').innerText = totalPoints;
+    }
+
+    function updateMenuStatus() {
+        const badges = { lvl1:'s-lvl1', lvl2:'s-lvl2', lvl3:'s-lvl3', lvl4:'s-lvl4', lvl5:'s-lvl5' };
+        const labels = { lvl1:'6 Poin', lvl2:'48 Poin', lvl3:'20 Poin', lvl4:'10 Poin', lvl5:'16 Poin' };
+        Object.keys(badges).forEach(k => {
+            const el = document.getElementById(badges[k]);
+            if (el) el.innerText = saves[k] ? '✅ Selesai' : labels[k];
+        });
+    }
+
+    function saveData() { localStorage.setItem('harmoniAppSave', JSON.stringify({ name: username, pts: totalPoints, saves: saves, avatar: userAvatar })); }
+
+    function resetSave() {
+        if (confirm("Reset semua data? Poin dan progres akan hilang.")) { localStorage.removeItem('harmoniAppSave'); location.reload(); }
+    }
+
+    function generateCertificate() {
+        playClickSound();
+        document.getElementById('cert-display-name').innerText = username || 'Siswa';
+        const score = Math.round((totalPoints / MAX_POINTS) * 100);
+        document.getElementById('cert-display-score').innerText = score;
+        goToPage('page-certificate');
+    }
+
+    // Load saved data
+    (function() {
+        const saved = localStorage.getItem('harmoniAppSave');
+        if (saved) {
+            try {
+                const d = JSON.parse(saved);
+                username = d.name || ''; totalPoints = d.pts || 0; saves = d.saves || saves; userAvatar = d.avatar || '';
+                if (username) document.getElementById('btn-reset').style.display = 'inline-block';
+                updatePointsDisplay();
+            } catch(e) {}
+        }
+    })();
+
+    // ===== OBJECTIVES SLIDER =====
+    let currentObjSlide = 0;
+    const totalObjSlides = 3;
+    function moveObjSlide(dir) { goObjSlide(currentObjSlide + dir); }
+    function goObjSlide(index) {
+        const slides = document.querySelectorAll('.obj-slide');
+        const dots   = document.querySelectorAll('.obj-dot');
+        slides[currentObjSlide].classList.remove('active');
+        slides[currentObjSlide].classList.add('exit-left');
+        setTimeout(() => slides[currentObjSlide].classList.remove('exit-left'), 350);
+        currentObjSlide = Math.max(0, Math.min(index, totalObjSlides - 1));
+        slides[currentObjSlide].classList.add('active');
+        dots.forEach((d, i) => d.classList.toggle('active', i === currentObjSlide));
+        document.getElementById('obj-prev').disabled = currentObjSlide === 0;
+        document.getElementById('obj-next').disabled = currentObjSlide === totalObjSlides - 1;
+        document.getElementById('obj-counter').innerText = (currentObjSlide + 1) + ' / ' + totalObjSlides;
+    }
+
+    // ===== LEARN TABS =====
+    function switchLearnTab(tabId) {
+        document.querySelectorAll('.learn-tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.learn-tab-content').forEach(c => c.classList.remove('active'));
+        document.getElementById('ltab-' + tabId).classList.add('active');
+        document.getElementById('lcontent-' + tabId).classList.add('active');
+    }
+
+    // ===== STUDI KASUS TAB =====
+    function showLearnKasus(key, btn) {
+        const area = btn.closest('.sim-container');
+        area.querySelectorAll('.sim-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const data = kasusData[key];
+        document.getElementById('learn-kasus-visual').innerHTML = `<span style="font-size:10cqh;">${data.visual}</span><br><span style="font-size:1.8cqh; color:rgba(255,255,255,0.7); text-align:center; padding:.5cqw;">${data.label}</span>`;
+        document.getElementById('learn-kasus-text').innerHTML = `<h4>${data.title}</h4><p>${data.text}</p>`;
+    }
+
+    // ===== TIMER =====
+    let timerInterval = null;
+    let timerRemaining = 0;
+    let timerPaused = false;
+    let timerCallback = null;
+
+    function startTimer(seconds, onTimeout) {
+        stopTimer();
+        timerRemaining = seconds;
+        timerPaused = false;
+        timerCallback = onTimeout;
+        const display = document.getElementById('timer-display');
+        const hudTimer = document.getElementById('timer-hud');
+        const pauseBtn = document.getElementById('timer-pause-btn');
+        if (hudTimer) hudTimer.style.display = 'flex';
+        if (pauseBtn) { pauseBtn.style.display = 'inline-block'; pauseBtn.innerText = '⏸'; }
+        display.innerText = timerRemaining + 's';
+        timerInterval = setInterval(() => {
+            if (!timerPaused) {
+                timerRemaining--;
+                display.innerText = timerRemaining + 's';
+                if (timerRemaining <= 0) { stopTimer(); if (timerCallback) timerCallback(); }
+            }
+        }, 1000);
+    }
+
+    function toggleTimerPause() {
+        const pauseBtn = document.getElementById('timer-pause-btn');
+        const hudTimer = document.getElementById('timer-hud');
+        timerPaused = !timerPaused;
+        if (pauseBtn) {
+            pauseBtn.innerText = timerPaused ? '▶' : '⏸';
+            pauseBtn.title = timerPaused ? 'Resume Timer' : 'Pause Timer';
+        }
+        if (hudTimer) {
+            hudTimer.style.background = timerPaused
+                ? 'rgba(249,202,36,0.9)'
+                : 'rgba(206,17,38,0.9)';
+            hudTimer.style.color = timerPaused ? '#1a1a2e' : '#fff';
+        }
+    }
+
+    function stopTimer() {
+        if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+        timerPaused = false;
+        const pauseBtn = document.getElementById('timer-pause-btn');
+        const hudTimer = document.getElementById('timer-hud');
+        if (pauseBtn) { pauseBtn.style.display = 'none'; pauseBtn.innerText = '⏸'; }
+        if (hudTimer) { hudTimer.style.background = 'rgba(206,17,38,0.9)'; hudTimer.style.color = '#fff'; }
+    }
+    function endLevel(dest) {
+        stopTimer(); goToPage(dest);
+        if (dest === 'page-exercise-menu' && saves.lvl1 && saves.lvl2 && saves.lvl3 && saves.lvl4 && saves.lvl5) {
+            setTimeout(() => showAllLevelsDonePopup(), 400);
+        }
+    }
+
+    function showAllLevelsDonePopup() {
+        if (document.getElementById('all-done-popup')) return;
+        const score = Math.round((totalPoints / MAX_POINTS) * 100);
+        let feedback = "", feedbackColor = "#0be881";
+        if (score >= 90) { feedback = "🏆 Luar Biasa! Kamu paham betul strategi harmoni dalam keberagaman!"; feedbackColor = "#ffdd59"; }
+        else if (score >= 75) { feedback = "👍 Bagus! Pemahamanmu sudah baik, terus tingkatkan!"; feedbackColor = "#0be881"; }
+        else if (score >= 60) { feedback = "📚 Cukup! Pelajari kembali materi strategi konflik dan peran warga negara."; feedbackColor = "#74b9ff"; }
+        else { feedback = "💪 Jangan menyerah! Pelajari kembali materinya sebelum mencoba lagi."; feedbackColor = "#ff7675"; }
+        const popup = document.createElement('div');
+        popup.id = 'all-done-popup';
+        popup.style.cssText = `position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(10,20,40,0.97); padding:4cqh 5cqw; border-radius:2cqh; box-shadow:0 1cqh 3cqh rgba(0,0,0,0.8); z-index:999; width:80cqw; max-width:55cqw; border:.2cqh solid rgba(255,221,89,0.5); text-align:center; animation: fadeIn 0.4s ease;`;
+        popup.innerHTML = `<div style="font-size:4cqh; margin-bottom:1cqh;">🎉</div><h3 style="color:#ffdd59; font-size:3.2cqh; margin-bottom:1.5cqh;">Semua Level Selesai!</h3><p style="color:rgba(255,255,255,0.7); font-size:1.8cqh; margin-bottom:1.5cqh;">Nilai Kamu</p><div style="font-size:6cqh; font-weight:800; color:#ffdd59; line-height:1; margin-bottom:.5cqh;">${score}</div><div style="font-size:1.6cqh; color:rgba(255,255,255,0.5); margin-bottom:2cqh;">Poin: ${totalPoints} / ${MAX_POINTS}</div><p style="color:${feedbackColor}; font-size:2cqh; font-weight:700; margin-bottom:2.5cqh; line-height:1.4;">${feedback}</p><div style="display:flex; justify-content:center; gap:2cqw; flex-wrap:wrap;"><button class="nav-btn-fallback yellow" style="font-size:2cqh;" onclick="playClickSound(); document.getElementById('all-done-popup').remove(); generateCertificate();">🏅 Lihat Sertifikat</button><button class="nav-btn-fallback" style="font-size:2cqh;" onclick="playClickSound(); document.getElementById('all-done-popup').remove();">Tutup</button></div>`;
+        document.getElementById('page-exercise-menu').appendChild(popup);
+    }
+
+    // ===== LEVEL 1: MENJODOHKAN (card layout baru) =====
+    const lvl1Data = [
+        { id: 1, term: "Mediasi", def: "Penyelesaian konflik dengan pihak ketiga netral yang membantu kedua pihak mencapai kesepakatan bersama" },
+        { id: 2, term: "Negosiasi", def: "Proses berunding langsung antarpihak yang berkonflik untuk mencapai kesepakatan yang dapat diterima semua pihak" },
+        { id: 3, term: "Arbitrase", def: "Penyelesaian konflik yang keputusannya diserahkan kepada pihak ketiga independen dan bersifat final mengikat" },
+        { id: 4, term: "Musyawarah", def: "Penyelesaian konflik melalui komunikasi terbuka, saling mendengar, dan mencapai kesepakatan bersama" },
+        { id: 5, term: "Toleransi", def: "Sikap menghargai dan menghormati perbedaan suku, agama, ras, dan antargolongan sebagai kewajiban warga negara" },
+        { id: 6, term: "Konflik", def: "Pertentangan atau perselisihan antara dua pihak atau lebih yang timbul akibat perbedaan kepentingan, nilai, tujuan, atau kebutuhan dalam kehidupan bermasyarakat" }
+    ];
+    let lvl1SelectedTerm = null, matchedPairs = 0;
+
+    function startLevel1() {
+        if (saves.lvl1) { alert("Kamu sudah menyelesaikan level ini!"); return; }
+        goToPage('page-level-1');
+        matchedPairs = 0; lvl1SelectedTerm = null;
+        document.getElementById('lvl1-done').style.display = 'none';
+
+        const colTerms = document.getElementById('col-terms');
+        const colDefs  = document.getElementById('col-defs');
+        colTerms.innerHTML = ''; colDefs.innerHTML = '';
+
+        [...lvl1Data].sort(() => Math.random() - 0.5).forEach(item => {
+            const btn = document.createElement('div');
+            btn.className = 'match-term-card';
+            btn.innerText = item.term;
+            btn.dataset.id = item.id;
+            btn.onmouseenter = playHoverSound;
+            btn.onclick = () => selectLvl1Term(btn);
+            colTerms.appendChild(btn);
+        });
+
+        [...lvl1Data].sort(() => Math.random() - 0.5).forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'match-def-card';
+            card.innerText = item.def;
+            card.dataset.id = item.id;
+            card.onmouseenter = playHoverSound;
+            card.onclick = () => selectLvl1Def(card);
+            colDefs.appendChild(card);
+        });
+
+        startTimer(60, () => {
+            saves.lvl1 = true; playWrong();
+            document.getElementById('lvl1-msg').innerText = "Waktu Habis!";
+            document.getElementById('lvl1-msg').style.color = "#ff3f34";
+            document.getElementById('lvl1-done').style.display = 'block';
+            saveData();
+        });
+    }
+
+    function selectLvl1Term(btn) {
+        if (btn.classList.contains('matched')) return;
+        playClickSound();
+        document.querySelectorAll('.match-term-card').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        lvl1SelectedTerm = btn;
+    }
+
+    function selectLvl1Def(card) {
+        if (card.classList.contains('matched')) return;
+        if (!lvl1SelectedTerm) {
+            card.classList.add('selected');
+            setTimeout(() => card.classList.remove('selected'), 350);
+            return;
+        }
+        playClickSound();
+        if (lvl1SelectedTerm.dataset.id === card.dataset.id) {
+            playCorrect();
+            lvl1SelectedTerm.classList.add('matched'); lvl1SelectedTerm.classList.remove('selected');
+            card.classList.add('matched');
+            matchedPairs++; totalPoints += 1; updatePointsDisplay();
+            lvl1SelectedTerm = null;
+            if (matchedPairs === lvl1Data.length) {
+                stopTimer(); saves.lvl1 = true; saveData();
+                document.getElementById('lvl1-msg').innerText = "Level Selesai!";
+                document.getElementById('lvl1-msg').style.color = "#05c46b";
+                setTimeout(() => { document.getElementById('lvl1-done').style.display = 'block'; }, 500);
+            }
+        } else {
+            playWrong();
+            card.classList.add('selected');
+            const termEl = lvl1SelectedTerm;
+            setTimeout(() => {
+                termEl.classList.remove('selected');
+                card.classList.remove('selected');
+                lvl1SelectedTerm = null;
+            }, 450);
+        }
+    }
+
+    // Legacy stub
+    function selectItem(element, type) {}
+
+    // ===== LEVEL 2: URUTKAN LANGKAH =====
+    const lvl2Data = [
+        {
+            skenario: "📋 Skenario 1 — SMAN 3 Bandung, Jawa Barat (2023): Seorang guru BK ingin menyelesaikan perselisihan antara dua siswa kelas XI yang berasal dari suku berbeda menggunakan metode MEDIASI. Urutkan langkah-langkah yang harus dilakukan guru secara benar!",
+            steps: [
+                "Bertemu dengan masing-masing siswa secara terpisah untuk mendengarkan cerita versi masing-masing pihak",
+                "Mempertemukan kedua siswa dalam satu ruangan dengan guru sebagai mediator yang netral",
+                "Memfasilitasi dialog — setiap pihak menyampaikan pendapat dan mendengarkan pihak lain",
+                "Membantu kedua siswa menemukan titik kesepakatan dan solusi yang dapat diterima",
+                "Menuangkan kesepakatan secara tertulis dan ditandatangani kedua siswa"
+            ],
+            correctOrder: [0,1,2,3,4],
+            pembahasan: "Urutan mediasi yang benar: (1) Dengarkan pihak secara terpisah → (2) Pertemukan dalam satu forum → (3) Fasilitasi dialog → (4) Bantu cari solusi → (5) Tuangkan kesepakatan secara tertulis. Mediator tidak boleh memihak dan harus memastikan kesepakatan diterima semua pihak."
+        },
+        {
+            skenario: "📋 Skenario 2 — Jakarta Selatan (2022): PT. Konstruksi Maju dan PT. Properti Sejahtera bersengketa terkait kualitas pengerjaan gedung senilai Rp 50 miliar. Kedua pihak sepakat menyelesaikan lewat ARBITRASE di Badan Arbitrase Nasional Indonesia (BANI). Urutkan tahapan proses arbitrase yang benar!",
+            steps: [
+                "Kedua pihak bersepakat untuk menggunakan arbitrase dan memilih arbiter yang independen dan netral",
+                "Masing-masing pihak menyampaikan argumen dan bukti kepada arbiter",
+                "Arbiter mempelajari semua bukti dan argumen dari kedua pihak secara menyeluruh",
+                "Arbiter mengambil keputusan yang bersifat final dan mengikat bagi kedua pihak",
+                "Kedua pihak melaksanakan keputusan arbiter sesuai yang telah disepakati"
+            ],
+            correctOrder: [0,1,2,3,4],
+            pembahasan: "Proses arbitrase: (1) Sepakati arbiter → (2) Sampaikan argumen & bukti → (3) Arbiter pelajari kasus → (4) Arbiter putuskan → (5) Laksanakan keputusan. Kunci arbitrase: keputusan FINAL dan MENGIKAT, berbeda dengan mediasi yang hasilnya disepakati para pihak sendiri."
+        },
+        {
+            skenario: "📋 Skenario 3 — Perumahan Griya Asri, Depok (2021): Dua kelompok warga RT 04 dan RT 05 berselisih soal penggunaan lahan kosong 500 m² — satu kelompok ingin dijadikan taman bermain, kelompok lain ingin fasilitas parkir bersama. Peran MASYARAKAT dalam penyelesaian konflik ini dilakukan dengan urutan yang tepat adalah...",
+            steps: [
+                "Tokoh masyarakat (RT/RW) mengidentifikasi adanya konflik dan memahami posisi kedua kelompok",
+                "RT/RW mengundang perwakilan kedua kelompok untuk hadir dalam forum musyawarah warga",
+                "Semua pihak diberi kesempatan menyampaikan pendapat dan kebutuhan secara bergantian",
+                "Bersama mencari titik tengah yang mengakomodasi kepentingan kedua kelompok",
+                "Kesepakatan dicatat dan diumumkan kepada seluruh warga kompleks"
+            ],
+            correctOrder: [0,1,2,3,4],
+            pembahasan: "Peran masyarakat dalam penyelesaian konflik warga: (1) Identifikasi konflik → (2) Undang forum musyawarah → (3) Beri ruang pendapat → (4) Cari titik tengah → (5) Catat & umumkan kesepakatan. Sesuai Sila ke-4 Pancasila: penyelesaian masalah melalui musyawarah mufakat."
+        },
+        {
+            skenario: "📋 Skenario 4 — Provinsi Papua Pegunungan (2023): Pemerintah daerah menemukan bahwa anak-anak dari kelompok masyarakat adat terpencil hanya 12% yang dapat mengakses SMA. Pemerintah ingin menerapkan gagasan solutif 'memberikan kesempatan yang sama' untuk mengatasi diskriminasi ini. Urutkan langkah implementasinya!",
+            steps: [
+                "Pemerintah melakukan pemetaan dan analisis data kelompok yang terdiskriminasi dalam akses pendidikan",
+                "Merancang kebijakan afirmatif (beasiswa, kuota, fasilitas khusus) berdasarkan data yang ada",
+                "Mensosialisasikan kebijakan kepada sekolah, masyarakat, dan kelompok yang dituju",
+                "Mengimplementasikan kebijakan secara konsisten dan memantau pelaksanaannya",
+                "Mengevaluasi dampak kebijakan dan melakukan penyesuaian jika diperlukan"
+            ],
+            correctOrder: [0,1,2,3,4],
+            pembahasan: "Implementasi gagasan solutif memerlukan siklus: (1) Pemetaan masalah → (2) Rancang kebijakan → (3) Sosialisasi → (4) Implementasi & pemantauan → (5) Evaluasi & perbaikan. Ini mencerminkan Sila ke-5 (Keadilan Sosial) yang menuntut tindakan nyata dan terencana."
+        },
+        {
+            skenario: "📋 Skenario 5 — Kota Ambon, Maluku (2011, pasca-rekonsiliasi): Terjadi ketegangan kembali antara komunitas Muslim dan Kristiani di dua kelurahan bertetangga setelah sebuah insiden kesalahpahaman di pasar. Pemerintah kota dan tokoh lintas agama berupaya menyelesaikannya melalui DIALOG dan MUSYAWARAH MUFAKAT. Urutkan langkah yang benar!",
+            steps: [
+                "Tokoh agama dan pemerintah daerah bersama-sama mengidentifikasi akar masalah ketegangan",
+                "Mendinginkan situasi: tokoh agama menyerukan perdamaian dan menghentikan provokasi",
+                "Memfasilitasi pertemuan antara perwakilan kedua komunitas di tempat yang netral",
+                "Membangun rasa saling percaya melalui dialog yang jujur, saling mendengarkan, dan menghormati",
+                "Menyepakati aturan hidup bersama yang diterima kedua komunitas dan diumumkan secara resmi"
+            ],
+            correctOrder: [0,1,2,3,4],
+            pembahasan: "Dialog antarkomunitas: (1) Identifikasi akar masalah → (2) Dinginkan situasi → (3) Fasilitasi pertemuan → (4) Bangun rasa percaya melalui dialog → (5) Sepakati aturan bersama. Sesuai Sila ke-1 (kasih sayang) dan Sila ke-3 (persatuan). Selaras PP No. 2/2015 tentang peran tokoh agama dan adat."
+        }
+    ];
+    let lvl2Index = 0, lvl2Score = 0;
+    let lvl2SelectedCard = null, lvl2PlacedOrder = [];
+
+    function startLevel2() {
+        if (saves.lvl2) { alert("Kamu sudah menyelesaikan level ini!"); return; }
+        goToPage('page-level-2');
+        document.getElementById('lvl2-game-area').style.display = 'flex';
+        document.getElementById('lvl2-result').style.display = 'none';
+        document.getElementById('lvl2-pembahasan').style.display = 'none';
+        lvl2Index = 0; lvl2Score = 0;
+        renderLvl2Question();
+        startTimer(240, () => { saves.lvl2 = true; playWrong(); showLvl2Result("⏰ Waktu Habis!"); saveData(); });
+    }
+
+    function renderLvl2Question() {
+        const d = lvl2Data[lvl2Index];
+        lvl2PlacedOrder = new Array(d.steps.length).fill(null);
+        lvl2SelectedCard = null;
+        document.getElementById('lvl2-skenario-box').innerHTML = d.skenario;
+        document.getElementById('lvl2-pembahasan').style.display = 'none';
+        const checkBtn = document.getElementById('lvl2-check-btn');
+        if (checkBtn) { checkBtn.disabled = true; checkBtn.classList.add('btn-locked'); }
+        // Render slots
+        const slotsEl = document.getElementById('lvl2-slots');
+        slotsEl.innerHTML = '';
+        d.steps.forEach((_, i) => {
+            const slot = document.createElement('div');
+            slot.className = 'sort-slot';
+            slot.dataset.slotIdx = i;
+            slot.innerHTML = `<span class="slot-num">${i+1}</span><span class="slot-text" id="slot-text-${i}">— Klik pilihan di bawah —</span>
+            <button class="slot-remove" id="slot-rm-${i}" style="display:none;" onclick="removeLvl2Slot(${i})">✕</button>`;
+            slot.onclick = (e) => { if (!e.target.classList.contains('slot-remove')) placeInSlot(i); };
+            slotsEl.appendChild(slot);
+        });
+        // Render shuffled choices
+        const choicesEl = document.getElementById('lvl2-choices');
+        choicesEl.innerHTML = '<p style="font-size:1.7cqh;color:rgba(255,255,255,0.55);font-weight:600;margin-bottom:.5cqh;">Pilih dan tempatkan ke urutan di atas:</p>';
+        const shuffledIdxs = [...Array(d.steps.length).keys()].sort(() => Math.random() - 0.5);
+        shuffledIdxs.forEach(origIdx => {
+            const card = document.createElement('div');
+            card.className = 'sort-card';
+            card.dataset.origIdx = origIdx;
+            card.id = 'sort-card-' + origIdx;
+            card.innerText = d.steps[origIdx];
+            card.onclick = () => selectSortCard(card, origIdx);
+            choicesEl.appendChild(card);
+        });
+    }
+
+    function selectSortCard(card, origIdx) {
+        if (card.classList.contains('sort-card-used')) return;
+        playClickSound();
+        document.querySelectorAll('.sort-card').forEach(c => c.classList.remove('sort-card-selected'));
+        card.classList.add('sort-card-selected');
+        lvl2SelectedCard = origIdx;
+        document.getElementById('lvl2-feedback').style.display = 'none';
+    }
+
+    function placeInSlot(slotIdx) {
+        if (lvl2SelectedCard === null) {
+            const fb = document.getElementById('lvl2-feedback');
+            fb.style.display = 'block'; fb.style.background = 'rgba(255,221,89,0.15)'; fb.style.color = '#ffdd59';
+            fb.innerText = '⚠️ Pilih dulu salah satu kartu langkah di bawah!';
+            return;
+        }
+        // If slot already filled, return old card
+        const oldOrig = lvl2PlacedOrder[slotIdx];
+        if (oldOrig !== null && oldOrig !== undefined) {
+            const oldCard = document.getElementById('sort-card-' + oldOrig);
+            if (oldCard) { oldCard.classList.remove('sort-card-used'); }
+        }
+        lvl2PlacedOrder[slotIdx] = lvl2SelectedCard;
+        const card = document.getElementById('sort-card-' + lvl2SelectedCard);
+        if (card) { card.classList.add('sort-card-used'); card.classList.remove('sort-card-selected'); }
+        document.getElementById('slot-text-' + slotIdx).innerText = lvl2Data[lvl2Index].steps[lvl2SelectedCard];
+        document.getElementById('slot-rm-' + slotIdx).style.display = 'inline-flex';
+        lvl2SelectedCard = null;
+        document.getElementById('lvl2-feedback').style.display = 'none';
+        const allFilled = lvl2PlacedOrder.every(v => v !== null && v !== undefined);
+        const checkBtn = document.getElementById('lvl2-check-btn');
+        if (checkBtn) {
+            if (allFilled) { checkBtn.disabled = false; checkBtn.classList.remove('btn-locked'); }
+            else { checkBtn.disabled = true; checkBtn.classList.add('btn-locked'); }
+        }
+    }
+
+    function removeLvl2Slot(slotIdx) {
+        const origIdx = lvl2PlacedOrder[slotIdx];
+        if (origIdx === null || origIdx === undefined) return;
+        playClickSound();
+        const card = document.getElementById('sort-card-' + origIdx);
+        if (card) { card.classList.remove('sort-card-used', 'sort-card-selected'); }
+        lvl2PlacedOrder[slotIdx] = null;
+        document.getElementById('slot-text-' + slotIdx).innerText = '— Klik pilihan di bawah —';
+        document.getElementById('slot-rm-' + slotIdx).style.display = 'none';
+        const checkBtn = document.getElementById('lvl2-check-btn');
+        if (checkBtn) { checkBtn.disabled = true; checkBtn.classList.add('btn-locked'); }
+    }
+
+    function resetLvl2Order() {
+        playClickSound();
+        renderLvl2Question();
+    }
+
+    function checkLvl2Order() {
+        const d = lvl2Data[lvl2Index];
+        let correct = 0;
+        d.correctOrder.forEach((expectedOrig, slotIdx) => {
+            if (lvl2PlacedOrder[slotIdx] === expectedOrig) correct++;
+        });
+        const isAllCorrect = (correct === d.steps.length);
+        const poin = correct === d.steps.length ? 10
+            : correct >= d.steps.length - 1 ? 8
+            : correct >= Math.ceil(d.steps.length * 0.6) ? 5
+            : correct >= 2 ? 2 : 0;
+        if (isAllCorrect) { playCorrect(); lvl2Score++; } else { playWrong(); }
+        totalPoints += poin; updatePointsDisplay();
+        // Highlight slots
+        document.querySelectorAll('.sort-slot').forEach((slot, slotIdx) => {
+            const expectedOrig = d.correctOrder[slotIdx];
+            const isCorrect = lvl2PlacedOrder[slotIdx] === expectedOrig;
+            slot.style.background = isCorrect ? 'rgba(5,196,107,0.2)' : 'rgba(206,17,38,0.2)';
+            slot.style.borderColor = isCorrect ? '#05c46b' : '#ce1126';
+        });
+        document.getElementById('lvl2-check-btn').style.display = 'none';
+        document.getElementById('lvl2-reset-btn').style.display = 'none';
+        document.getElementById('lvl2-pembahasan-text').innerText = d.pembahasan;
+        const pb = document.getElementById('lvl2-pembahasan');
+        pb.style.display = 'block';
+        pb.style.background = isAllCorrect ? 'rgba(5,196,107,0.12)' : 'rgba(255,221,89,0.12)';
+        pb.style.borderLeftColor = isAllCorrect ? '#05c46b' : '#ffdd59';
+    }
+
+    function nextLvl2Question() {
+        lvl2Index++;
+        if (lvl2Index < lvl2Data.length) {
+            document.getElementById('lvl2-check-btn').style.display = '';
+            document.getElementById('lvl2-reset-btn').style.display = '';
+            renderLvl2Question();
+        } else {
+            stopTimer(); saves.lvl2 = true; showLvl2Result("🎉 Level Selesai!");
+        }
+    }
+
+    function showLvl2Result(msg) {
+        saveData();
+        document.getElementById('lvl2-msg').innerText = msg;
+        document.getElementById('lvl2-game-area').style.display = 'none';
+        document.getElementById('lvl2-result').style.display = 'block';
+        document.getElementById('lvl2-score').innerText = lvl2Score + " / " + lvl2Data.length;
+        if (lvl2Score >= Math.ceil(lvl2Data.length * 0.8)) playCorrect(); else playWrong();
+    }
+
+    // ===== LEVEL 3: PILIHAN GANDA =====
+    const lvl3Data = [
+        { q: "Dalam kasus konflik antara dua siswa di sekolah, pihak sekolah menunjuk konselor untuk mempertemukan kedua siswa dan membantu mereka mencapai kesepakatan. Metode penyelesaian konflik apakah yang digunakan?", options: ["Arbitrase", "Mediasi", "Negosiasi", "Musyawarah mufakat", "Intervensi"], ans: 1, pembahasan: "Jawaban: B. Mediasi adalah proses penyelesaian konflik dengan mempertemukan pihak yang terlibat dengan mediator atau pihak ketiga yang netral. Konselor berperan sebagai mediator yang membantu kedua siswa mencapai kesepakatan." },
+        { q: "Prinsip Pancasila yang menekankan pentingnya kasih sayang sebagai fondasi penyelesaian konflik dan mengutamakan nilai moral serta etika adalah...", options: ["Sila ke-5: Keadilan Sosial", "Sila ke-3: Persatuan Indonesia", "Sila ke-1: Ketuhanan Yang Maha Esa", "Sila ke-4: Kerakyatan", "Sila ke-2: Kemanusiaan"], ans: 2, pembahasan: "Jawaban: C. Sila ke-1 (Ketuhanan Yang Maha Esa) menekankan penyelesaian konflik dengan hati yang tenang, tidak bertentangan dengan kaidah keagamaan, dan menjunjung nilai kasih sayang sebagai fondasi." },
+        { q: "Dua perusahaan bersengketa tentang kualitas pekerjaan konstruksi. Mereka menyepakati untuk menunjuk pihak ketiga independen yang keputusannya bersifat final dan mengikat. Metode ini disebut...", options: ["Mediasi", "Konsiliasi", "Negosiasi", "Arbitrase", "Dialog"], ans: 3, pembahasan: "Jawaban: D. Arbitrase adalah proses penyelesaian konflik dengan menyerahkan penyelesaiannya kepada pihak ketiga yang independen dan netral. Keputusan arbiter bersifat final dan mengikat bagi semua pihak." },
+        { q: "Berdasarkan UU No. 7 Tahun 2012, penanganan konflik antara lain bertujuan untuk...", options: ["Memberikan kemenangan kepada pihak yang benar", "Membuktikan kesalahan pihak yang memulai konflik", "Menciptakan kehidupan masyarakat yang aman, tenteram, dan sejahtera", "Mengisolasi pihak yang berkonflik dari masyarakat", "Menetapkan hukuman bagi pelaku konflik"], ans: 2, pembahasan: "Jawaban: C. Pasal 3 UU No. 7/2012 menyatakan bahwa penanganan konflik bertujuan menciptakan kehidupan masyarakat yang aman, tenteram, damai, dan sejahtera, serta memelihara kondisi damai dan harmonis." },
+        { q: "Sebagai anggota keluarga, Budi berperan mempertemukan ayah dan ibunya yang berselisih, mendengarkan kedua pihak, dan membantu mencari solusi terbaik. Peran apakah yang sedang dilakukan Budi?", options: ["Arbiter", "Negosiator", "Mediator", "Hakim", "Pengamat"], ans: 2, pembahasan: "Jawaban: C. Budi bertindak sebagai mediator dalam lingkup keluarga. Anak dapat memiliki peran ini dengan mengumpulkan informasi dan membantu menemukan solusi yang baik bagi kedua orang tua." },
+        { q: "Gagasan solutif berupa 'mendorong musyawarah dan kerja sama antarkelompok masyarakat' paling selaras dengan prinsip Pancasila sila ke...", options: ["Satu", "Dua", "Tiga", "Empat", "Lima"], ans: 3, pembahasan: "Jawaban: D. Sila ke-4 (Kerakyatan yang dipimpin oleh hikmat kebijaksanaan dalam permusyawaratan/perwakilan) menekankan penyelesaian masalah melalui musyawarah mufakat dan kerja sama." },
+        { q: "Kewajiban warga negara dalam memelihara kondisi damai yang diatur berdasarkan UU No. 7/2012 antara lain...", options: ["Mengalahkan kelompok yang berbeda pendapat", "Mengembangkan sikap toleransi dan menghormati kebebasan beribadah orang lain", "Memaksakan pandangan kepada kelompok lain", "Menghindari interaksi dengan orang berbeda suku", "Memenangkan debat dengan kelompok lain"], ans: 1, pembahasan: "Jawaban: B. Setiap warga negara berkewajiban mengembangkan sikap toleransi dan saling menghormati kebebasan menjalankan ibadah sesuai agama dan kepercayaannya sebagai bagian dari memelihara kondisi damai." },
+        { q: "Prinsip 'memberikan kesempatan yang sama bagi semua individu dalam pendidikan, pekerjaan, dan pelayanan publik' merupakan gagasan solutif yang mencerminkan nilai...", options: ["Bela negara", "Keadilan sosial bagi seluruh rakyat Indonesia", "Kebebasan individu mutlak", "Persaingan antargolongan", "Dominasi kelompok mayoritas"], ans: 1, pembahasan: "Jawaban: B. Pemberian kesempatan yang sama bagi semua individu dan kelompok mencerminkan nilai Sila ke-5 Pancasila: Keadilan Sosial bagi Seluruh Rakyat Indonesia." },
+        { q: "Peran negara dalam penanganan konflik mencakup tiga tahap utama yaitu...", options: ["Investigasi, penghukuman, dan rehabilitasi", "Pencegahan konflik, penghentian konflik, dan pemulihan pascakonflik", "Deteksi dini, intervensi, dan pengawasan", "Peringatan, tindakan, dan sanksi", "Mediasi, arbitrase, dan negosiasi"], ans: 1, pembahasan: "Jawaban: B. Negara memiliki peran penting dalam pencegahan konflik, penghentian konflik, dan pemulihan pascakonflik secara terencana, terpadu, berkelanjutan, dan terukur." },
+        { q: "Kasus perundungan (bullying) yang dialami Farhan di kampusnya merupakan pelanggaran terhadap gagasan solutif tentang...", options: ["Memberikan kesempatan yang sama", "Mendorong musyawarah antarkelompok", "Menghormati hak asasi manusia — hak atas rasa aman dan martabat", "Meningkatkan persaingan antarmahasiswa", "Menjaga keseimbangan kepentingan publik"], ans: 2, pembahasan: "Jawaban: C. Bullying melanggar hak asasi manusia — khususnya hak atas rasa aman dan harga diri. Salah satu gagasan solutif utama adalah menghormati HAM, termasuk hak setiap individu untuk bebas dari diskriminasi dan kekerasan." }
+    ];
+    let lvl3Index = 0, lvl3Score = 0, lvl3Answered = false;
+
+    function startLevel3() {
+        if (saves.lvl3) { alert("Kamu sudah menyelesaikan level ini!"); return; }
+        goToPage('page-level-3');
+        document.getElementById('lvl3-game-area').style.display = 'flex';
+        document.getElementById('lvl3-result').style.display = 'none';
+        document.getElementById('lvl3-pembahasan').style.display = 'none';
+        lvl3Index = 0; lvl3Score = 0; lvl3Answered = false;
+        renderLvl3Question();
+        startTimer(200, () => { saves.lvl3 = true; playWrong(); showLvl3Result("⏰ Waktu Habis!"); saveData(); });
+    }
+
+    function renderLvl3Question() {
+        const d = lvl3Data[lvl3Index];
+        const total = lvl3Data.length;
+
+        // Update progress
+        document.getElementById('lvl3-qnum-cur').innerText = lvl3Index + 1;
+        document.getElementById('lvl3-qnum-tot').innerText = total;
+        document.getElementById('lvl3-prog-fill').style.width = (((lvl3Index + 1) / total) * 100) + '%';
+        document.getElementById('lvl3-score-live').innerText = '✅ ' + lvl3Score + ' benar';
+
+        document.getElementById('lvl3-question').innerText = d.q;
+        document.getElementById('lvl3-pembahasan').style.display = 'none';
+        lvl3Answered = false;
+        const container = document.getElementById('lvl3-options');
+        container.innerHTML = '';
+        const labels = ['A','B','C','D','E'];
+        d.options.forEach((opt, i) => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn' + (i === 4 ? ' opt-5th' : '');
+            btn.innerHTML = `<span class="opt-label">${labels[i]}</span><span>${opt}</span>`;
+            btn.onclick = () => answerLvl3(i, btn);
+            container.appendChild(btn);
+        });
+    }
+
+    function answerLvl3(idx, btn) {
+        if (lvl3Answered) return;
+        lvl3Answered = true; playClickSound();
+        const d = lvl3Data[lvl3Index];
+        const isCorrect = (idx === d.ans);
+        const allBtns = document.querySelectorAll('#lvl3-options .option-btn');
+        if (isCorrect) {
+            playCorrect(); lvl3Score++; totalPoints += 2; updatePointsDisplay();
+            btn.style.background = 'rgba(5,196,107,0.35)';
+            btn.style.borderColor = '#05c46b';
+            btn.querySelector('.opt-label').style.background = '#05c46b';
+            btn.querySelector('.opt-label').style.color = '#fff';
+        } else {
+            playWrong();
+            btn.style.background = 'rgba(206,17,38,0.3)';
+            btn.style.borderColor = '#ff3f34';
+            btn.querySelector('.opt-label').style.background = '#ce1126';
+            btn.querySelector('.opt-label').style.color = '#fff';
+            const correctBtn = allBtns[d.ans];
+            if (correctBtn) {
+                correctBtn.style.background = 'rgba(5,196,107,0.3)';
+                correctBtn.style.borderColor = '#05c46b';
+                correctBtn.querySelector('.opt-label').style.background = '#05c46b';
+                correctBtn.querySelector('.opt-label').style.color = '#fff';
+            }
+        }
+        allBtns.forEach(b => { b.disabled = true; b.style.cursor = 'default'; });
+        document.getElementById('lvl3-pembahasan-text').innerText = d.pembahasan;
+        document.getElementById('lvl3-pembahasan').style.display = 'block';
+        document.getElementById('lvl3-score-live').innerText = '✅ ' + lvl3Score + ' benar';
+    }
+
+    function nextLvl3Question() {
+        lvl3Index++;
+        if (lvl3Index < lvl3Data.length) { renderLvl3Question(); }
+        else { stopTimer(); saves.lvl3 = true; showLvl3Result("🎉 Level Selesai!"); }
+    }
+
+    function showLvl3Result(msg) {
+        saveData();
+        document.getElementById('lvl3-msg').innerText = msg;
+        document.getElementById('lvl3-game-area').style.display = 'none';
+        document.getElementById('lvl3-result').style.display = 'block';
+        document.getElementById('lvl3-score').innerText = lvl3Score + " / 10";
+        if (lvl3Score >= 8) playCorrect(); else playWrong();
+    }
+
+    // ===== LEVEL 4: DROP-DOWN =====
+    const lvl4Data = [
+        { before: "Penyelesaian konflik dengan mempertemukan pihak yang berselisih kepada pihak ketiga netral disebut", blank: "mediasi", after: "dan pihak ketiga tersebut berfungsi membantu mencapai kesepakatan bersama.", choices: ["mediasi", "arbitrase", "negosiasi", "intervensi"], pembahasan: "Kata yang tepat adalah 'mediasi'. Mediator adalah pihak ketiga yang netral dan tidak memutuskan perkara, melainkan memfasilitasi kedua pihak untuk mencapai kesepakatan sendiri." },
+        { before: "Dalam metode arbitrase, keputusan yang diambil oleh arbiter bersifat", blank: "final dan mengikat", after: "bagi semua pihak yang terlibat dalam konflik tersebut.", choices: ["final dan mengikat", "saran belaka", "sementara saja", "tidak resmi"], pembahasan: "Kata yang tepat adalah 'final dan mengikat'. Ini yang membedakan arbitrase dari mediasi — dalam arbitrase, para pihak wajib menerima keputusan arbiter tanpa boleh menolaknya." },
+        { before: "Prinsip Sila ke-3 Pancasila dalam penyelesaian konflik menekankan bahwa perbedaan yang ada di masyarakat harus dipandang sebagai", blank: "kekayaan dan kekuatan", after: "bangsa Indonesia, bukan sebagai sumber perpecahan.", choices: ["ancaman nasional", "kekayaan dan kekuatan", "hambatan pembangunan", "sumber persoalan"], pembahasan: "Kata yang tepat adalah 'kekayaan dan kekuatan'. Sila ke-3 mengajak kita melihat perbedaan sebagai aset bangsa — semakin mengenal perbedaan, semakin cinta Indonesia." },
+        { before: "Peran serta warga negara dalam penyelesaian konflik di masyarakat antara lain diatur dalam Peraturan Pemerintah No. 2 Tahun 2015 yang menyebutkan keterlibatan", blank: "tokoh agama, tokoh adat, dan tokoh masyarakat", after: "dalam pencegahan, penghentian, dan pemulihan pascakonflik.", choices: ["pengusaha dan investor", "tokoh agama, tokoh adat, dan tokoh masyarakat", "mahasiswa dan pelajar", "aparat keamanan saja"], pembahasan: "Kata yang tepat adalah 'tokoh agama, tokoh adat, dan tokoh masyarakat'. PP No. 2/2015 menyebutkan peran tokoh-tokoh ini bersama pranata adat dan pranata sosial dalam penyelesaian konflik secara damai." },
+        { before: "Salah satu gagasan solutif utama dalam menghadapi keberagaman adalah menghormati", blank: "hak asasi manusia", after: "sehingga setiap individu bebas dari diskriminasi dan berhak memeluk agama serta kepercayaannya.", choices: ["kewenangan pemerintah", "hak asasi manusia", "hak kelompok mayoritas", "tradisi lokal saja"], pembahasan: "Kata yang tepat adalah 'hak asasi manusia'. Menghormati HAM merupakan prinsip utama dalam mengatasi permasalahan keberagaman — setiap individu memiliki hak yang sama untuk hidup bebas dari diskriminasi." }
+    ];
+    let lvl4Score = 0;
+
+    function updateLvl4CheckBtn() {
+        const allFilled = lvl4Data.every((_, i) => { const sel = document.getElementById('lvl4-select-' + i); return sel && sel.value !== ''; });
+        const btn = document.getElementById('lvl4-check-btn');
+        if (!btn) return;
+        if (allFilled) { btn.disabled = false; btn.classList.remove('btn-locked'); } else { btn.disabled = true; btn.classList.add('btn-locked'); }
+    }
+
+    function startLevel4() {
+        if (saves.lvl4) { alert("Kamu sudah menyelesaikan level ini!"); return; }
+        goToPage('page-level-4'); lvl4Score = 0;
+        document.getElementById('lvl4-result').style.display = 'none';
+        document.getElementById('lvl4-pembahasan').style.display = 'none';
+        const btn = document.getElementById('lvl4-check-btn');
+        if (btn) { btn.disabled = true; btn.classList.add('btn-locked'); btn.style.display = ''; }
+        const container = document.getElementById('lvl4-questions');
+        container.innerHTML = '';
+        lvl4Data.forEach((item, i) => {
+            const shuffled = [...item.choices].sort(() => Math.random() - 0.5);
+            const block = document.createElement('div');
+            block.className = 'dropdown-q-block';
+            block.innerHTML = `<b style="color:#ffdd59;">${i+1}.</b> ${item.before} <select class="inline-select" id="lvl4-select-${i}" onchange="updateLvl4CheckBtn()"><option value="">-- pilih --</option>${shuffled.map(c => `<option value="${c}">${c}</option>`).join('')}</select> ${item.after}`;
+            container.appendChild(block);
+        });
+        startTimer(120, () => { checkLvl4(); });
+    }
+
+    function checkLvl4() {
+        stopTimer();
+        if (saves.lvl4) return;
+        saves.lvl4 = true; lvl4Score = 0;
+        let pbHTML = '';
+        lvl4Data.forEach((item, i) => {
+            const sel = document.getElementById('lvl4-select-' + i);
+            const chosen = sel ? sel.value : '';
+            const isCorrect = (chosen === item.blank);
+            if (isCorrect) { playCorrect(); lvl4Score++; totalPoints += 2; updatePointsDisplay(); }
+            if (sel) { sel.classList.add(isCorrect ? 'correct' : 'wrong'); sel.disabled = true; }
+            pbHTML += `<div style="margin-bottom:1.2cqh; padding:.8cqh 1cqw; border-radius:.8cqh; background:${isCorrect ? 'rgba(5,196,107,0.1)' : 'rgba(206,17,38,0.1)'};">
+                <b style="color:${isCorrect ? '#0be881' : '#ff7675'};">${isCorrect ? '✅' : '❌'} Soal ${i+1}:</b>
+                <span style="color:rgba(255,255,255,0.8); font-size:1.65cqh;"> Jawaban benar: <b style="color:#ffdd59;">${item.blank}</b></span><br>
+                <span style="font-size:1.6cqh; color:rgba(255,255,255,0.7);">${item.pembahasan}</span>
+            </div>`;
+        });
+        document.getElementById('lvl4-pembahasan-text').innerHTML = pbHTML;
+        document.getElementById('lvl4-pembahasan').style.display = 'block';
+        const checkBtn = document.getElementById('lvl4-check-btn');
+        if (checkBtn) checkBtn.style.display = 'none';
+        saveData();
+        if (lvl4Score === lvl4Data.length) playCorrect(); else playWrong();
+    }
+
+    // ===== LEVEL 5: KLASIFIKASI KONSEP =====
+    const lvl5Categories = [
+        { id: 'metode', label: '⚙️ Metode Penyelesaian', color: '#0be881', bg: 'rgba(5,196,107,0.18)', border: '#05c46b' },
+        { id: 'peran', label: '👥 Peran Warga/Negara', color: '#74b9ff', bg: 'rgba(87,95,207,0.18)', border: '#575fcf' },
+        { id: 'prinsip', label: '🕊️ Prinsip Pancasila', color: '#ffdd59', bg: 'rgba(255,221,89,0.15)', border: '#f9ca24' },
+        { id: 'gagasan', label: '💡 Gagasan Solutif', color: '#fd79a8', bg: 'rgba(253,121,168,0.18)', border: '#e84393' }
+    ];
+    const lvl5Cards = [
+        { text: "Mediasi", cat: "metode" }, { text: "Arbitrase", cat: "metode" },
+        { text: "Negosiasi", cat: "metode" }, { text: "Musyawarah Mufakat", cat: "metode" },
+        { text: "Peran Keluarga sebagai mediator anggota", cat: "peran" },
+        { text: "Peran RT/RW memfasilitasi forum warga", cat: "peran" },
+        { text: "Negara melakukan pencegahan konflik", cat: "peran" },
+        { text: "Sila ke-1: Kasih sayang sebagai fondasi", cat: "prinsip" },
+        { text: "Sila ke-3: Perbedaan sebagai kekuatan bangsa", cat: "prinsip" },
+        { text: "Sila ke-4: Musyawarah problem solving", cat: "prinsip" },
+        { text: "Menghormati Hak Asasi Manusia", cat: "gagasan" },
+        { text: "Memberikan kesempatan yang sama semua kelompok", cat: "gagasan" },
+        { text: "Mendorong dialog antarbudaya", cat: "gagasan" },
+        { text: "Sila ke-2: Harkat dan martabat manusia", cat: "prinsip" },
+        { text: "Pemulihan pascakonflik oleh negara", cat: "peran" },
+        { text: "Keputusan berkeadilan sosial Sila ke-5", cat: "gagasan" }
+    ];
+    let lvl5Placed = {}, lvl5SelectedCardIdx = null, lvl5TotalCards = 0, lvl5Correct = 0;
+
+    function startLevel5() {
+        if (saves.lvl5) { alert("Kamu sudah menyelesaikan level ini!"); return; }
+        goToPage('page-level-5');
+        lvl5Placed = {}; lvl5SelectedCardIdx = null; lvl5Correct = 0;
+        lvl5TotalCards = lvl5Cards.length;
+        document.getElementById('lvl5-game-area').style.display = 'flex';
+        document.getElementById('lvl5-result').style.display = 'none';
+        document.getElementById('lvl5-feedback').style.display = 'none';
+        document.getElementById('lvl5-remaining').innerText = lvl5TotalCards;
+        // Render categories
+        const catEl = document.getElementById('lvl5-categories');
+        catEl.innerHTML = '';
+        lvl5Categories.forEach(cat => {
+            const box = document.createElement('div');
+            box.className = 'classify-cat';
+            box.id = 'cat-box-' + cat.id;
+            box.style.cssText = `flex:1; min-height:7cqh; border-radius:1cqh; border:.25cqh solid ${cat.border}; background:${cat.bg}; padding:.8cqh .8cqw; cursor:pointer; transition:.2s; display:flex; flex-direction:column; gap:.4cqh;`;
+            box.innerHTML = `<div style="font-size:1.6cqh; font-weight:800; color:${cat.color};">${cat.label}</div><div id="cat-items-${cat.id}" style="display:flex; flex-wrap:wrap; gap:.4cqh; min-height:2.5cqh;"></div>`;
+            box.onclick = () => classifyCard(cat.id);
+            catEl.appendChild(box);
+        });
+        // Render shuffled cards
+        const cardsEl = document.getElementById('lvl5-cards-area');
+        cardsEl.innerHTML = '';
+        const shuffled = [...lvl5Cards.keys()].sort(() => Math.random() - 0.5);
+        shuffled.forEach(origIdx => {
+            const card = document.createElement('div');
+            card.className = 'classify-card';
+            card.id = 'clcard-' + origIdx;
+            card.dataset.idx = origIdx;
+            card.innerText = lvl5Cards[origIdx].text;
+            card.onclick = () => selectClassifyCard(origIdx, card);
+            cardsEl.appendChild(card);
+        });
+        startTimer(300, () => { saves.lvl5 = true; playWrong(); finishLvl5(); saveData(); });
+    }
+
+    function selectClassifyCard(idx, card) {
+        if (card.classList.contains('classified')) return;
+        playClickSound();
+        document.querySelectorAll('.classify-card').forEach(c => c.classList.remove('classify-selected'));
+        card.classList.add('classify-selected');
+        lvl5SelectedCardIdx = idx;
+        const fb = document.getElementById('lvl5-feedback');
+        fb.style.display = 'block'; fb.style.background = 'rgba(255,221,89,0.12)'; fb.style.color = '#ffdd59';
+        fb.innerText = '👆 Sekarang klik salah satu KATEGORI di atas untuk menempatkan kartu ini!';
+    }
+
+    function classifyCard(catId) {
+        if (lvl5SelectedCardIdx === null) {
+            const fb = document.getElementById('lvl5-feedback');
+            fb.style.display = 'block'; fb.style.background = 'rgba(255,221,89,0.1)'; fb.style.color = '#ffdd59';
+            fb.innerText = '⚠️ Pilih dulu salah satu kartu di bawah!'; return;
+        }
+        const idx = lvl5SelectedCardIdx;
+        const card = document.getElementById('clcard-' + idx);
+        const correctCat = lvl5Cards[idx].cat;
+        const isCorrect = (catId === correctCat);
+        lvl5Placed[idx] = catId;
+        // Move mini-chip to category
+        const catColor = lvl5Categories.find(c => c.id === catId).color;
+        const chip = document.createElement('span');
+        chip.style.cssText = `background:${isCorrect ? 'rgba(5,196,107,0.3)' : 'rgba(206,17,38,0.3)'}; color:${isCorrect ? '#0be881' : '#ff7675'}; font-size:1.3cqh; padding:.3cqh .6cqw; border-radius:.5cqh; border:.1cqh solid ${isCorrect ? '#05c46b' : '#ce1126'};`;
+        chip.innerText = (isCorrect ? '✅ ' : '❌ ') + lvl5Cards[idx].text;
+        document.getElementById('cat-items-' + catId).appendChild(chip);
+        card.classList.add('classified');
+        card.classList.remove('classify-selected');
+        card.style.opacity = '0.35'; card.style.cursor = 'default';
+        if (isCorrect) { playCorrect(); lvl5Correct++; totalPoints += 1; updatePointsDisplay(); }
+        else { playWrong(); }
+        lvl5SelectedCardIdx = null;
+        document.getElementById('lvl5-feedback').style.display = 'none';
+        const remaining = lvl5TotalCards - Object.keys(lvl5Placed).length;
+        document.getElementById('lvl5-remaining').innerText = remaining;
+        if (remaining === 0) { stopTimer(); saves.lvl5 = true; saveData(); setTimeout(finishLvl5, 600); }
+    }
+
+    function finishLvl5() {
+        const total = lvl5TotalCards;
+        const poin = Math.round((lvl5Correct / total) * 16);
+        document.getElementById('lvl5-game-area').style.display = 'none';
+        document.getElementById('lvl5-result').style.display = 'flex';
+        const msg = lvl5Correct >= total * 0.85 ? "🎉 Klasifikasi Sempurna!" : lvl5Correct >= total * 0.6 ? "👏 Klasifikasi Baik!" : "📝 Terus Berlatih!";
+        document.getElementById('lvl5-msg').innerText = msg;
+        document.getElementById('lvl5-score').innerText = poin + " Poin";
+        document.getElementById('lvl5-detail').innerText = `${lvl5Correct} dari ${total} kartu diklasifikasikan dengan benar`;
+        // Show review
+        let reviewHTML = '<div style="background:rgba(255,255,255,0.07); border-radius:1cqh; padding:1.2cqh 1.5cqw;"><h4 style="color:#ffdd59; font-size:1.9cqh; margin-bottom:1cqh;">📋 Kunci Klasifikasi:</h4>';
+        lvl5Categories.forEach(cat => {
+            const items = lvl5Cards.filter(c => c.cat === cat.id);
+            reviewHTML += `<div style="margin-bottom:.8cqh;"><b style="color:${cat.color}; font-size:1.6cqh;">${cat.label}:</b><br><span style="font-size:1.5cqh; color:rgba(255,255,255,0.8);">${items.map(c => c.text).join(' · ')}</span></div>`;
+        });
+        reviewHTML += '</div>';
+        document.getElementById('lvl5-review').innerHTML = reviewHTML;
+        if (lvl5Correct >= total * 0.6) playCorrect(); else playWrong();
+    }
+
+    document.getElementById("username-input").addEventListener("keypress", function(event) {
+        if (event.key === "Enter") { event.preventDefault(); goToCharacterSelect(); }
+    });
+
+    // ============================================================
+    // COVER LIGHTNING EFFECT — Welcome Page only
+    // ============================================================
+    (function() {
+        const canvas = document.getElementById('cover-lightning-canvas');
+        const flashEl = document.getElementById('cover-flash');
+        if (!canvas || !flashEl) return;
+        const ctx = canvas.getContext('2d');
+        let strikes = [];
+        let nextStrike = Date.now() + 1500;
+
+        function resize() {
+            const cont = document.getElementById('main-container');
+            canvas.width = cont.offsetWidth;
+            canvas.height = cont.offsetHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        function rand(a, b) { return a + Math.random() * (b - a); }
+
+        function buildBolt(x1, y1, x2, y2, rough, depth) {
+            if (depth <= 0) return [{x:x1,y:y1},{x:x2,y:y2}];
+            const mx = (x1+x2)/2 + (Math.random()-0.5)*rough;
+            const my = (y1+y2)/2 + (Math.random()-0.5)*rough*0.35;
+            const L = buildBolt(x1,y1,mx,my,rough*0.56,depth-1);
+            const R = buildBolt(mx,my,x2,y2,rough*0.56,depth-1);
+            R.shift();
+            return [...L,...R];
+        }
+
+        function drawBolt(pts, alpha, width, color) {
+            if (pts.length < 2) return;
+            ctx.save();
+            ctx.globalAlpha = Math.max(0, alpha);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = width;
+            ctx.shadowBlur = width * 9;
+            ctx.shadowColor = color;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.beginPath();
+            ctx.moveTo(pts[0].x, pts[0].y);
+            for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        class Strike {
+            constructor() {
+                const w = canvas.width, h = canvas.height;
+                this.sx = rand(w * 0.05, w * 0.95);
+                this.sy = rand(0, h * 0.18);
+                this.ex = this.sx + rand(-w * 0.2, w * 0.2);
+                this.ey = rand(h * 0.42, h * 0.85);
+                const rough = rand(50, 120);
+                this.pts = buildBolt(this.sx, this.sy, this.ex, this.ey, rough, 7);
+                this.branches = [];
+                const nb = Math.floor(rand(1, 4));
+                for (let i = 0; i < nb; i++) {
+                    const idx = Math.floor(rand(this.pts.length * 0.3, this.pts.length * 0.75));
+                    const bx = this.pts[idx].x + rand(-w*0.1, w*0.1);
+                    const by = this.pts[idx].y + rand(15, h * 0.16);
+                    this.branches.push(buildBolt(this.pts[idx].x, this.pts[idx].y, bx, by, rough*0.35, 5));
+                }
+                this.alpha = 0;
+                this.maxAlpha = rand(0.6, 0.95);
+                this.phase = 'in';
+                this.hold = 0; this.maxHold = Math.floor(rand(4, 14));
+                this.flashed = false;
+            }
+            update() {
+                if (this.phase === 'in') {
+                    this.alpha += 0.38;
+                    if (this.alpha >= this.maxAlpha) { this.alpha = this.maxAlpha; this.phase = 'hold'; }
+                    if (!this.flashed) {
+                        flashEl.style.background = 'rgba(180,220,255,0.13)';
+                        setTimeout(() => { flashEl.style.background = 'rgba(180,220,255,0)'; }, 65);
+                        this.flashed = true;
+                    }
+                } else if (this.phase === 'hold') {
+                    this.alpha = this.maxAlpha * (0.7 + Math.random() * 0.3);
+                    if (++this.hold >= this.maxHold) this.phase = 'out';
+                } else {
+                    this.alpha -= 0.065;
+                }
+            }
+            draw() {
+                const a = Math.max(0, this.alpha);
+                drawBolt(this.pts, a,        2.2, 'rgba(255,255,255,1)');
+                drawBolt(this.pts, a * 0.4,  6.5, 'rgba(140,195,255,0.7)');
+                this.branches.forEach(b => {
+                    drawBolt(b, a * 0.55, 1.4, 'rgba(255,255,255,0.88)');
+                    drawBolt(b, a * 0.25, 3.5, 'rgba(140,195,255,0.55)');
+                });
+            }
+            done() { return this.phase === 'out' && this.alpha <= 0; }
+        }
+
+        function loop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (document.getElementById('page-welcome').classList.contains('active')) {
+                const now = Date.now();
+                if (now >= nextStrike && strikes.length < 2) {
+                    strikes.push(new Strike());
+                    if (Math.random() < 0.2) strikes.push(new Strike());
+                    nextStrike = now + rand(1200, 3500);
+                }
+                strikes = strikes.filter(s => !s.done());
+                strikes.forEach(s => { s.update(); s.draw(); });
+            }
+            requestAnimationFrame(loop);
+        }
+        loop();
+    })();
+
+    function printCertificateOnly() {
+        const certEl = document.querySelector('#page-certificate .certificate-inner');
+        if (!certEl) { alert('Sertifikat belum tersedia.'); return; }
+        const printWin = window.open('', '_blank', 'width=900,height=700');
+        if (!printWin) { alert('Popup diblokir. Izinkan popup untuk mencetak.'); return; }
+        printWin.document.write('<html><head><title>Cetak Sertifikat</title>');
+        printWin.document.write('<style>body{margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#fff;}@media print{body{background:#fff;}}</style>');
+        // Copy all stylesheets
+        document.querySelectorAll('style').forEach(s => {
+            printWin.document.write('<style>' + s.innerHTML + '</style>');
+        });
+        printWin.document.write('</head><body>');
+        printWin.document.write(certEl.outerHTML);
+        printWin.document.write('</body></html>');
+        printWin.document.close();
+        printWin.focus();
+        setTimeout(() => { printWin.print(); }, 500);
+    }
+
+    function downloadCertificateAsJPG() {
+        const name = document.getElementById('cert-display-name').innerText;
+        if (typeof html2canvas !== 'undefined') {
+            const certEl = document.querySelector('#page-certificate .certificate-inner');
+            if (!certEl) { alert('Sertifikat belum tersedia.'); return; }
+            html2canvas(certEl, { scale: 3, backgroundColor: '#ffffff', useCORS: true, logging: false }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = 'Sertifikat-' + name.replace(/\s+/g, '-') + '.jpg';
+                link.href = canvas.toDataURL('image/jpeg', 0.95);
+                link.click();
+            });
+        } else { alert('Sedang memuat... coba lagi dalam beberapa detik.'); }
+    }
+</script>
+</body>
+</html>
